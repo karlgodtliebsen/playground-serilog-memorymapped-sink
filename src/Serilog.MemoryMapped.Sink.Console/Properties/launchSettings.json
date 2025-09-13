@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Serilog.MemoryMapped.Sink": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
