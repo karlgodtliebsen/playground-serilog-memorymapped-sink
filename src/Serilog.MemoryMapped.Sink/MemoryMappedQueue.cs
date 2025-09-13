@@ -1,63 +1,28 @@
-﻿using Serilog.Parsing;
+﻿using Serilog.MemoryMapped.Sink.Sinks;
 
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 
 
 namespace Serilog.MemoryMapped.Sink;
+
 
 public class MemoryMappedQueue(string name) : MemoryMappedQueue<LogEventWrapper>(name), IMemoryMappedQueue
 {
 
 }
-public static class JsonConfig
-{
-    public static JsonSerializerOptions CreateOptions()
-    {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
 
-        //// Configure the type resolver for polymorphic serialization
-        //options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
-        //    new DefaultJsonTypeInfoResolver
-        //    {
-        //        Modifiers = { ConfigurePolymorphism }
-        //    }
-        //);
-
-        return options;
-    }
-
-    private static void ConfigurePolymorphism(JsonTypeInfo typeInfo)
-    {
-        if (typeInfo.Type == typeof(MessageTemplateToken))
-        {
-            typeInfo.PolymorphismOptions = new JsonPolymorphismOptions
-            {
-                TypeDiscriminatorPropertyName = "$type",
-                DerivedTypes =
-                {
-                    new JsonDerivedType(typeof(PropertyToken), "property"),
-                    new JsonDerivedType(typeof(TextToken), "text")
-                }
-            };
-        }
-    }
-}
 public class MemoryMappedQueue<T>(string name) : IMemoryMappedQueue<T> where T : class
 {
     private readonly MemoryMappedQueueBuffer mmBuffer = new(name);
 
-    //private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     public bool TryEnqueue(T entry)
     {
         // IMPORTANT: payload is a span into 'writer' – don't let it outlive the using scope.
         using var writer = new PooledBufferWriter();
         using var jsonWriter = new Utf8JsonWriter(writer);
-        JsonSerializer.Serialize(jsonWriter, entry, JsonConfig.CreateOptions());
+        JsonSerializer.Serialize(jsonWriter, entry, JsonOpts);
         jsonWriter.Flush();
 
         ReadOnlySpan<byte> payload = writer.WrittenSpan;
@@ -80,7 +45,7 @@ public class MemoryMappedQueue<T>(string name) : IMemoryMappedQueue<T> where T :
     {
         var messageBytes = mmBuffer.TryDequeue();
         if (messageBytes == Array.Empty<byte>()) return null;
-        return JsonSerializer.Deserialize<T>(messageBytes.AsSpan(), JsonConfig.CreateOptions());
+        return JsonSerializer.Deserialize<T>(messageBytes.AsSpan(), JsonOpts);
     }
 
     public IList<T> TryDequeueBatch(int maxCount = 100)

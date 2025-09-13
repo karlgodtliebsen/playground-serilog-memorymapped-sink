@@ -1,8 +1,8 @@
 ﻿using Serilog.Events;
 
-namespace Serilog.MemoryMapped.Sink.Forwarder.Repositories;
+namespace Serilog.MemoryMapped.Sink.Forwarder;
 
-public static class RepositoryExtensions
+public static class JsonExtensions
 {
     public static string? ToJson(this Exception? exception)
     {

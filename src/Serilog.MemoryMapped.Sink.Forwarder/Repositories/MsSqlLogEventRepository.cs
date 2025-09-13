@@ -1,8 +1,10 @@
-﻿using System.Data.Common;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
+
+using System.Data.Common;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
@@ -23,7 +25,7 @@ CREATE TABLE log_event (
     timestamp TEXT NOT NULL,
     level TEXT NOT NULL,
     exception TEXT NULL,
-    message_template TEXT NOT NULL,    
+    rendered_message TEXT NOT NULL,    
     trace_id TEXT NULL,
     span_id TEXT NULL,
     properties TEXT NULL

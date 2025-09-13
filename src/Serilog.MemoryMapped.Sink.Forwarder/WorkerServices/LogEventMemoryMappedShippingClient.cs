@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using Serilog.Events;
-
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue<LogEvent> memoryMappedQueue, ILogEventForwarder forwarder,
+public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQueue, ILogEventForwarder forwarder,
     ILogger<LogEventMemoryMappedShippingClient> logger) : ILogEventMemoryMappedShippingClient
 {
     public async Task StartAsync(CancellationToken cancellationToken)

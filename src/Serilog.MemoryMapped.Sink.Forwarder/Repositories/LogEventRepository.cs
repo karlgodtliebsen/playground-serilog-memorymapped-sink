@@ -3,8 +3,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Serilog.Events;
 using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
+using Serilog.MemoryMapped.Sink.Sinks;
 
 using System.Data;
 using System.Data.Common;
@@ -18,9 +18,11 @@ public abstract class LogEventRepository(IOptions<DatabaseConnectionOptions> opt
     protected abstract string GetConnectionString();
 
     protected abstract DbConnection GetConnection();
+    protected abstract string GetCreateTableStatement();
 
     private void PrintInformation(string message)
     {
+        //SelfLog.WriteLine($"Rolling database to {newFilePath}");
         Debug.Print(message);
         Trace.WriteLine(message);
         Console.WriteLine(message);
@@ -32,20 +34,6 @@ public abstract class LogEventRepository(IOptions<DatabaseConnectionOptions> opt
         Console.WriteLine($"Failed {action}\n Exception: {ex}\n In Database: {GetConnectionString()}");
     }
 
-    protected virtual string GetCreateTableStatement()
-    {
-        return @"
-CREATE TABLE log_event (    
-    timestamp TEXT NOT NULL,
-    level TEXT NOT NULL,
-    exception TEXT NULL,
-    message_template TEXT NOT NULL,    
-    trace_id TEXT NULL,
-    span_id TEXT NULL,
-    properties TEXT NULL
-);
-";
-    }
 
     public async Task CreateTable(CancellationToken cancellationToken)
     {
@@ -64,13 +52,13 @@ CREATE TABLE log_event (
         }
     }
 
-    public async IAsyncEnumerable<LogEvent> Find(object? parameters, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<LogEventWrapper> Find(object? parameters, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var sqlStatement = "SELECT * FROM log_event";
         await using var connection = GetConnection();
         await connection.OpenAsync(cancellationToken);
 
-        IEnumerable<LogEvent> reader = await connection.QueryAsync<LogEvent>(sqlStatement, parameters);
+        IEnumerable<LogEventWrapper> reader = await connection.QueryAsync<LogEventWrapper>(sqlStatement, parameters);
         foreach (var logEvent in reader)
         {
             yield return logEvent;
@@ -78,7 +66,14 @@ CREATE TABLE log_event (
     }
 
 
-    public async Task Add(IEnumerable<LogEvent> entries, CancellationToken cancellationToken)
+    //sqlCommand.Parameters.Add(new SQLiteParameter("@timeStamp", DbType.DateTime2));
+    //sqlCommand.Parameters.Add(new SQLiteParameter("@level", DbType.String));
+    //sqlCommand.Parameters.Add(new SQLiteParameter("@exception", DbType.String));
+    //sqlCommand.Parameters.Add(new SQLiteParameter("@renderedMessage", DbType.String));
+    //sqlCommand.Parameters.Add(new SQLiteParameter("@properties", DbType.String));
+
+
+    public async Task Add(IEnumerable<LogEventWrapper> entries, CancellationToken cancellationToken)
     {
         var entriesList = entries.ToList();
         if (!entriesList.Any()) return;
@@ -97,17 +92,17 @@ CREATE TABLE log_event (
                 {
                     timestamp = entity.Timestamp,
                     level = entity.Level.ToString(),
-                    exception = entity.Exception.ToJson(),
-                    message_template = entity.MessageTemplate,
+                    exception = entity.Exception,
+                    rendered_message = entity.RenderedMessage,
                     trace_id = entity.TraceId,
                     span_id = entity.SpanId,
-                    properties = entity.Properties.ToJson(),
+                    properties = entity.Properties,
 
                 }).ToArray();
 
                 var sqlStatement =
-                    @" INSERT INTO log_event (timestamp, level, exception, message_template, trace_id, span_id,properties) 
-                    VALUES (@timestamp, @level, @exception, @message_template, @trace_id, @span_id, @properties);";
+                    @" INSERT INTO log_event (timestamp, level, exception, rendered_message, trace_id, span_id,properties) 
+                    VALUES (@timestamp, @level, @exception, @rendered_message, @trace_id, @span_id, @properties);";
 
                 var rowsAffected = await connection.ExecuteAsync(sqlStatement, parameters, transaction);
 
