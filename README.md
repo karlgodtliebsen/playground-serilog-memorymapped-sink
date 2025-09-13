@@ -1,0 +1,1 @@
+# playground-serilog-memorymapped-sink
