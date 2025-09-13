@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Serilog.MemoryMapped.Sink;
 
-public class LogEventMemoryMappedSink(IMemoryMappedQueue<LogEvent> memoryMappedQueue, LogEventLevel restrictedToMinimumLevel = LogEventLevel.Information) : ILogEventSink
+public class LogEventMemoryMappedSink(IMemoryMappedQueue<LogEventWrapper> memoryMappedQueue, LogEventLevel restrictedToMinimumLevel = LogEventLevel.Information) : ILogEventSink
 {
     private void PrintError(Exception ex, string action)
     {
@@ -24,12 +24,16 @@ public class LogEventMemoryMappedSink(IMemoryMappedQueue<LogEvent> memoryMappedQ
                 return;
             }
 
-            var result = memoryMappedQueue.TryEnqueue(logEvent);
+            var ms = new MemoryStream();
+            var textWriter = new StreamWriter(ms);
+            logEvent.RenderMessage(textWriter);
+
+            var result = memoryMappedQueue.TryEnqueue(new LogEventWrapper(logEvent));
             Debug.Assert(result);
         }
         catch (Exception ex)
         {
-            PrintError(ex, "Insert Into LogEvent MemoryMapped File");
+            PrintError(ex, "Insert Into LogEvent -> LogEventWrapper MemoryMapped File");
         }
     }
 }

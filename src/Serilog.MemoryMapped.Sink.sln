@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Sink",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Sink.Tests", "Serilog.MemoryMapped.Sink.Tests\Serilog.MemoryMapped.Sink.Tests.csproj", "{970EC1B7-9400-4AE3-8238-B938AEDBB3BE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Sink.Forwarder", "Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj", "{1BBFF396-8DF0-419E-9D03-255CD77E839C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{970EC1B7-9400-4AE3-8238-B938AEDBB3BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{970EC1B7-9400-4AE3-8238-B938AEDBB3BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{970EC1B7-9400-4AE3-8238-B938AEDBB3BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

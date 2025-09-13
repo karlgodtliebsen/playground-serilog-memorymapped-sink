@@ -6,3 +6,9 @@ public interface IMemoryMappedQueue<T> : IDisposable where T : class
     T? TryDequeue();
     IList<T> TryDequeueBatch(int maxCount = 100);
 }
+
+
+public interface IMemoryMappedQueue : IMemoryMappedQueue<LogEventWrapper>
+{
+
+}
