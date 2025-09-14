@@ -30,7 +30,7 @@ public class LogEventMemoryMappedSink(IMemoryMappedQueue memoryMappedQueue,
             formatter.Format(logEvent, textWriter);
             var renderedMessage = textWriter.ToString();
 
-            LogEventWrapper logEventWrapper = new LogEventWrapper(logEvent.Timestamp, logEvent.Level, renderedMessage,
+            LogEventWrapper logEventWrapper = new LogEventWrapper(logEvent.Timestamp, logEvent.Level, logEvent.MessageTemplate.Text, renderedMessage,
                  logEvent.Exception, logEvent.TraceId, logEvent.SpanId, logEvent.Properties);
             var result = memoryMappedQueue.TryEnqueue(logEventWrapper);
             Debug.Assert(result);

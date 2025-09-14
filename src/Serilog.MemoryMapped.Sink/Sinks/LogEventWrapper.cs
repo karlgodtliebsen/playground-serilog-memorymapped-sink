@@ -10,7 +10,7 @@ public class LogEventWrapper
     {
     }
 
-    public LogEventWrapper(DateTimeOffset timeStamp, LogEventLevel level, string renderedMessage, Exception? exception,
+    public LogEventWrapper(DateTimeOffset timeStamp, LogEventLevel level, string messageTemplate, string renderedMessage, Exception? exception,
         ActivityTraceId? traceId, ActivitySpanId? spanId, IReadOnlyDictionary<string, LogEventPropertyValue> logEventProperties)
     {
         if (exception is not null)
@@ -28,6 +28,7 @@ public class LogEventWrapper
             SpanId = spanId.Value.ToString();
         }
         RenderedMessage = renderedMessage;
+        MessageTemplate = messageTemplate;
         Properties = logEventProperties.ToJson();
     }
 
@@ -55,6 +56,7 @@ public class LogEventWrapper
     /// The message template describing the event.
     /// </summary>
     public string RenderedMessage { get; init; } = null!;
+    public string MessageTemplate { get; init; } = null!;
 
     /// <summary>
     /// Properties associated with the event, including those presented in <see cref="LogEvent.MessageTemplate"/>.

@@ -33,6 +33,7 @@ BEGIN
         [level] nvarchar(25) NOT NULL,
         [exception] nvarchar(max) NULL,
         rendered_message nvarchar(max) NOT NULL,    
+        message_template nvarchar(max) NOT NULL,    
         trace_id nvarchar(255) NULL,
         span_id nvarchar(255) NULL,
         properties nvarchar(max) NULL

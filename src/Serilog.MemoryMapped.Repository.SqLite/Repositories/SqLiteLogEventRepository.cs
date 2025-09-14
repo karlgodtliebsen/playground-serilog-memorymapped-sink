@@ -27,6 +27,7 @@ public sealed class SqLiteLogEventRepository : LogEventRepository
     level TEXT NOT NULL,
     exception TEXT NULL,
     rendered_message TEXT NOT NULL,
+    message_template TEXT NOT NULL,
     trace_id TEXT NULL,
     span_id TEXT NULL,
     properties TEXT NULL

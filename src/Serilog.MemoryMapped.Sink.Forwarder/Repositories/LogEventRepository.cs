@@ -86,6 +86,7 @@ public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger lo
                     level = entity.Level.ToString(),
                     exception = entity.Exception,
                     rendered_message = entity.RenderedMessage,
+                    message_template = entity.MessageTemplate,
                     trace_id = entity.TraceId,
                     span_id = entity.SpanId,
                     properties = entity.Properties,
@@ -93,8 +94,8 @@ public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger lo
                 }).ToArray();
 
                 var sqlStatement =
-                    @" INSERT INTO log_event (timestamp, level, exception, rendered_message, trace_id, span_id,properties) 
-                    VALUES (@timestamp, @level, @exception, @rendered_message, @trace_id, @span_id, @properties);";
+                    @" INSERT INTO log_event (timestamp, level, exception, rendered_message, message_template,trace_id, span_id,properties) 
+                    VALUES (@timestamp, @level, @exception, @rendered_message, @message_template,@trace_id, @span_id, @properties);";
 
                 var rowsAffected = await connection.ExecuteAsync(sqlStatement, parameters, transaction);
 
