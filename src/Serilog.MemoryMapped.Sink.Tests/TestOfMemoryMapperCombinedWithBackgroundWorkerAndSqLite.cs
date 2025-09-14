@@ -4,11 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Serilog.Context;
 using Serilog.Debugging;
 using Serilog.MemoryMapped.Sink.Configuration;
-
-using System.Diagnostics;
 
 using Xunit.Abstractions;
 
@@ -17,11 +14,13 @@ namespace Serilog.MemoryMapped.Sink.Tests;
 public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutputHelper output)
 {
     //TestContext.Current.CancellationToken
-    private IList<string> messages = new List<string>();
+    private readonly IList<string> messages = new List<string>();
 
-    private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+    private readonly CancellationTokenSource cancellationTokenSource =
+        new CancellationTokenSource(TimeSpan.FromMinutes(1));
 
     private const string MappedFileName = "thename";
+
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
     {
 
@@ -29,7 +28,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
         {
             if (msg.Contains("Successfully inserted")) messages.Add(msg);
             output.WriteLine($"Serilog: {msg}");
-        }); var configurationBuilder = new ConfigurationBuilder();
+        });
+        var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddJsonFile("appsettings.json");
         var configuration = configurationBuilder.Build();
         IServiceCollection services = new ServiceCollection();
@@ -51,9 +51,12 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
 
         for (int i = 0; i < 10000; i++)
         {
-            Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
-            Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+            Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1",
+                "the t2", "the t3", i);
+            Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user",
+                "the t1", "the t2", "the t3", i);
         }
+
         output.WriteLine($"Done Emitting - Entering Wait");
 
         await Log.CloseAndFlushAsync();
@@ -65,7 +68,9 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     {
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration, MappedFileName);
-        Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));//not the best way to wait. we should have some task completion wait going on
+        Task.Run(async () =>
+            await host.RunAsync(cancellationTokenSource
+                .Token)); //not the best way to wait. we should have some task completion wait going on
 
         output.WriteLine($"Waiting");
         await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
@@ -80,52 +85,27 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration, MappedFileName);
         Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
-
-        using var activity = new Activity("TestOperation")
-            .SetIdFormat(ActivityIdFormat.W3C) // Use W3C format
-            .Start();
-
-        activity.SetParentId("00-12345678901234567890123456789012-1234567890123456-01");
-        // Add some tags to the activity
-        activity?.SetTag("test.method", "Test_With_Activity_Tracing_SqLite");
-        activity?.SetTag("test.class", nameof(TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql));
-
-        // Create listener for the activity source
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = _ => true,
-            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        for (int i = 0; i < 1000; i++)
-        {
-            using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString()))
-            using (LogContext.PushProperty("SpanId", Activity.Current?.SpanId.ToString()))
-            {
-                Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
-                Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
-            }
-            output.WriteLine($"Emitting LogEntries {i}");
-        }
-        output.WriteLine($"Done Emitting - Entering Wait");
-
         var messageReceived = new TaskCompletionSource<bool>();
-
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
-            if (messages.Count >= max)
+            while (!cancellationTokenSource.IsCancellationRequested)
             {
-                count = messages.Count;
-                messageReceived.SetResult(true);
+                if (messages.Count >= max)
+                {
+                    count = messages.Count;
+                    messageReceived.SetResult(true);
+                }
+
+                await Task.Delay(10);
             }
         }, cancellationTokenSource.Token);
 
-        await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
+        LogProducer.Produce(output);
 
+        await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
         output.WriteLine($"Done Wait {count}");
         await Log.CloseAndFlushAsync();
-
-        messages.Count.Should().BeGreaterThanOrEqualTo(count);
+        count.Should().BeGreaterThanOrEqualTo(max);
+        await cancellationTokenSource.CancelAsync();
     }
 }
