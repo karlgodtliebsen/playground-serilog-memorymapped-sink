@@ -10,19 +10,37 @@ using Serilog.MemoryMapped.Sink.Configuration;
 
 using System.Diagnostics;
 
+using Testcontainers.PostgreSql;
+
 using Xunit.Abstractions;
 
 namespace Serilog.MemoryMapped.Sink.Tests;
 
-public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputHelper output)
+public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOutputHelper output)
 {
     //TestContext.Current.CancellationToken
-    private IList<string> messages = new List<string>();
 
     private const string MappedFileName = "thename";
-    private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
-    {
+    private readonly string databaseName = "LoggingDemo";
+    private readonly string password = "yourStrong(!)Password";
+    private PostgreSqlContainer? container = null;
+    private IList<string> messages = new List<string>();
 
+    private async Task<string> StartContainerAsync()
+    {
+        // Initialize and start the container
+        container = new PostgreSqlBuilder()
+            .WithDatabase(databaseName)
+            .WithPassword(password) // SQL Server requires a strong password
+            .Build();
+
+        await container.StartAsync();
+        var connectionString = container!.GetConnectionString();
+        return connectionString;
+    }
+    private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings(string connectionString)
+    {
+        output.WriteLine($"Using PostgreSql TestContainer Connection: {connectionString}");
         SelfLog.Enable(msg =>
         {
             if (msg.Contains("Successfully inserted")) messages.Add(msg);
@@ -31,13 +49,11 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddJsonFile("appsettings.json");
         var configuration = configurationBuilder.Build();
+
         IServiceCollection services = new ServiceCollection();
         services.AddMemoryMappedServices(MappedFileName);
-
         services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
-
         var serviceProvider = services.BuildServiceProvider();
-
         serviceProvider.SetupSerilogWithSink(configuration);
         return (serviceProvider, configuration);
     }
@@ -45,8 +61,11 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
-        var (serviceProvider, configuration) = BuildSettings();
-        var host = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration, MappedFileName);
+        var connectionString = await StartContainerAsync();
+        var (serviceProvider, configuration) = BuildSettings(connectionString);
+
+
+        var host = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration, MappedFileName, connectionString);
         Task.Run(async () => await host.RunAsync(CancellationToken.None));
 
         using var activity = new Activity("TestOperation")
@@ -55,7 +74,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
 
         activity.SetParentId("00-12345678901234567890123456789012-1234567890123456-01");
         // Add some tags to the activity
-        activity?.SetTag("test.method", "Test_With_Activity_Tracing_MsSql");
+        activity?.SetTag("test.method", "Test_With_Activity_Tracing_PostgreSql");
         activity?.SetTag("test.class", nameof(TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql));
 
         // Create listener for the activity source
@@ -81,6 +100,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
         await Task.Delay(10000);
         output.WriteLine($"Done Wait");
         await Log.CloseAndFlushAsync();
+
         messages.Count.Should().Be(11);
     }
 }

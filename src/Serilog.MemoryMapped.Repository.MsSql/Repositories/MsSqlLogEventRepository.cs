@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Serilog.MemoryMapped.Repository.MsSql.Configuration;
+using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
 using System.Data.Common;

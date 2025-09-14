@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
+using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
 using SqLiteLogEventRepository = Serilog.MemoryMapped.Repository.SqLite.Repositories.SqLiteLogEventRepository;

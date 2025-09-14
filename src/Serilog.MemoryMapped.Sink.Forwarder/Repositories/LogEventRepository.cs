@@ -82,7 +82,7 @@ public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger lo
             {
                 var parameters = entriesList.Select(entity => new
                 {
-                    timestamp = entity.Timestamp,
+                    timestamp = entity.Timestamp.UtcDateTime,
                     level = entity.Level.ToString(),
                     exception = entity.Exception,
                     rendered_message = entity.RenderedMessage,

@@ -39,6 +39,15 @@
 		<PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
 
 
+		<PackageReference Include="Testcontainers" Version="4.7.0" />
+		<PackageReference Include="Testcontainers.MariaDb" Version="4.7.0" />
+		<PackageReference Include="Testcontainers.MsSql" Version="4.7.0" />
+		<PackageReference Include="Testcontainers.OpenSearch" Version="4.7.0" />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="4.7.0" />
+		<PackageReference Include="Testcontainers.RabbitMq" Version="4.7.0" />
+
+
+
 		<PackageReference Include="FluentAssertions" Version="[7.0.0]" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
@@ -54,6 +63,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.MsSql\Serilog.MemoryMapped.Repository.MsSql.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.PostgreSql\Serilog.MemoryMapped.Repository.PostgreSql.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.SqLite\Serilog.MemoryMapped.Repository.SqLite.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink\Serilog.MemoryMapped.Sink.csproj" />

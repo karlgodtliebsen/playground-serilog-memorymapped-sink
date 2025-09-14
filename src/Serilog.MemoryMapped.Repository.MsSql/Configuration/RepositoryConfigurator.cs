@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 using Serilog.MemoryMapped.Repository.MsSql.Repositories;
+using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
 namespace Serilog.MemoryMapped.Repository.MsSql.Configuration;

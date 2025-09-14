@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Serilog.MemoryMapped.Repository.SqLite.Configuration;
+using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
 using System.Data.Common;
@@ -15,7 +15,7 @@ public sealed class SqLiteLogEventRepository : LogEventRepository
 
     public SqLiteLogEventRepository(IOptions<DatabaseConnectionOptions> options, ILogger<SqLiteLogEventRepository> logger) : base(logger)
     {
-        connectionString = BuildSqLiteConnectionString(options.Value.ConnectionString);
+        connectionString = BuildConnectionString(options.Value.ConnectionString);
     }
 
     protected override string GetCreateTableStatement()
@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_log_level ON log_event(level);
     //private const long MaxSupportedDatabaseSize = unchecked(MaxSupportedPageSize * MaxSupportedPages) / 1048576;
 
 
-    private string BuildSqLiteConnectionString(string connString)
+    private string BuildConnectionString(string connString)
     {
         var sqlConString = new SQLiteConnectionStringBuilder
         {
@@ -62,6 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_log_level ON log_event(level);
     {
         return connectionString;
     }
+
     protected override DbConnection GetConnection()
     {
         return new SQLiteConnection(connectionString);

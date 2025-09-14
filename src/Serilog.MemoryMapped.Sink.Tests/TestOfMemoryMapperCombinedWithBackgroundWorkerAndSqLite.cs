@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using FluentAssertions;
+
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,13 +17,17 @@ namespace Serilog.MemoryMapped.Sink.Tests;
 public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutputHelper output)
 {
     //TestContext.Current.CancellationToken
+    private IList<string> messages = new List<string>();
 
     private const string MappedFileName = "thename";
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
     {
 
-        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
-        var configurationBuilder = new ConfigurationBuilder();
+        SelfLog.Enable(msg =>
+        {
+            if (msg.Contains("Successfully inserted")) messages.Add(msg);
+            output.WriteLine($"Serilog: {msg}");
+        }); var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddJsonFile("appsettings.json");
         var configuration = configurationBuilder.Build();
         IServiceCollection services = new ServiceCollection();
@@ -77,7 +83,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
 
         activity.SetParentId("00-12345678901234567890123456789012-1234567890123456-01");
         // Add some tags to the activity
-        activity?.SetTag("test.method", "Test_With_Activity_Tracing_MsSql");
+        activity?.SetTag("test.method", "Test_With_Activity_Tracing_SqLite");
         activity?.SetTag("test.class", nameof(TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql));
 
         // Create listener for the activity source
@@ -103,5 +109,6 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
         await Task.Delay(10000);
         output.WriteLine($"Done Wait");
         await Log.CloseAndFlushAsync();
+        messages.Count.Should().Be(11);
     }
 }
