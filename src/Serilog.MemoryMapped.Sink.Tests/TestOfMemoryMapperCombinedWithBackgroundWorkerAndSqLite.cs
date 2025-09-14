@@ -19,21 +19,23 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     private readonly CancellationTokenSource cancellationTokenSource =
         new CancellationTokenSource(TimeSpan.FromMinutes(1));
 
-    private const string MappedFileName = "thename";
 
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
     {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
 
         SelfLog.Enable(msg =>
         {
             if (msg.Contains("Successfully inserted")) messages.Add(msg);
+            if (cancellationTokenSource.IsCancellationRequested) return;
             output.WriteLine($"Serilog: {msg}");
         });
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddJsonFile("appsettings.json");
         var configuration = configurationBuilder.Build();
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices(MappedFileName);
+        services.AddMemoryMappedServices(configuration);
 
         services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
 
@@ -47,6 +49,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     [Fact]
     public async Task ProduceOnly()
     {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
         var (serviceProvider, configuration) = BuildSettings();
 
         for (int i = 0; i < 10000; i++)
@@ -67,14 +71,15 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     public async Task ConsumeOnly()
     {
         var (serviceProvider, configuration) = BuildSettings();
-        var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration, MappedFileName);
+        var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
         Task.Run(async () =>
             await host.RunAsync(cancellationTokenSource
                 .Token)); //not the best way to wait. we should have some task completion wait going on
 
         output.WriteLine($"Waiting");
-        await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
-        output.WriteLine($"Done Wait");
+        await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(5), cancellationTokenSource.Token));
+        output.WriteLine($"Done Waiting");
+        await cancellationTokenSource.CancelAsync();
     }
 
     [Fact]
@@ -83,7 +88,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
         int max = 11;
         int count = 0;
         var (serviceProvider, configuration) = BuildSettings();
-        var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration, MappedFileName);
+        var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
         Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
         var messageReceived = new TaskCompletionSource<bool>();
         _ = Task.Run(async () =>

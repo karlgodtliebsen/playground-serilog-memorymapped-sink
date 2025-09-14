@@ -18,7 +18,6 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
     //TestContext.Current.CancellationToken
     private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(1));
 
-    private const string MappedFileName = "thename";
     private readonly string databaseName = "LoggingDemo";
     private readonly string password = "yourStrong(!)Password";
     private PostgreSqlContainer? container = null;
@@ -39,9 +38,12 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings(string connectionString)
     {
         output.WriteLine($"Using PostgreSql TestContainer Connection: {connectionString}");
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
         SelfLog.Enable(msg =>
         {
             if (msg.Contains("Successfully inserted")) messages.Add(msg);
+            if (cancellationTokenSource.IsCancellationRequested) return;
             output.WriteLine($"Serilog: {msg}");
         });
         var configurationBuilder = new ConfigurationBuilder();
@@ -49,7 +51,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
         var configuration = configurationBuilder.Build();
 
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices(MappedFileName);
+        services.AddMemoryMappedServices(configuration);
         services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
         var serviceProvider = services.BuildServiceProvider();
         serviceProvider.SetupSerilogWithSink(configuration);
@@ -64,9 +66,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
         var connectionString = await StartContainerAsync();
         var (serviceProvider, configuration) = BuildSettings(connectionString);
 
-
-        var host = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration, MappedFileName, connectionString);
-        Task.Run(async () => await host.RunAsync(CancellationToken.None));
+        var host = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration, connectionString);
+        Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
 
         var messageReceived = new TaskCompletionSource<bool>();
 

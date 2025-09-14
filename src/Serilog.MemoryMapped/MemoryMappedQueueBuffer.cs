@@ -82,6 +82,7 @@ public class MemoryMappedQueueBuffer
         try
         {
             // Open existing map and discover actual capacity
+            MemoryMapperLogger.Write("MemoryMappedQueueBuffer MemoryMappedFile.OpenExisting {0}", name);
             memoryMappedFile = MemoryMappedFile.OpenExisting(name);
             accessor = memoryMappedFile.CreateViewAccessor(0, 0, MemoryMappedFileAccess.ReadWrite);
             capacity = checked((int)accessor.Capacity);
@@ -95,6 +96,7 @@ public class MemoryMappedQueueBuffer
         catch (FileNotFoundException)
         {
             // Create new map with configured capacity
+            MemoryMapperLogger.Write("MemoryMappedQueueBuffer MemoryMappedFile.CreateNew {0}", name);
             capacity = capacityMB * 1024 * 1024;
             memoryMappedFile = MemoryMappedFile.CreateNew(name, capacity, MemoryMappedFileAccess.ReadWrite);
             accessor = memoryMappedFile.CreateViewAccessor(0, 0, MemoryMappedFileAccess.ReadWrite);
@@ -107,6 +109,8 @@ public class MemoryMappedQueueBuffer
 
     private void InitializeHeader()
     {
+        MemoryMapperLogger.Write("MemoryMappedQueueBuffer InitializeHeader");
+
         accessor.Write(0, (long)headerSize); // writePos starts after header
         accessor.Write(8, (long)headerSize); // readPos starts after header
         accessor.Write(16, 0L);               // messageCount = 0
@@ -117,6 +121,8 @@ public class MemoryMappedQueueBuffer
 
     public bool TryEnqueue(byte[] messageBytes)
     {
+        MemoryMapperLogger.Write("MemoryMappedQueueBuffer TryEnqueue byte[]");
+
         if (!TryAcquireMutex(TimeSpan.FromSeconds(1))) return false;
 
         try
@@ -185,6 +191,8 @@ public class MemoryMappedQueueBuffer
 
     public bool TryEnqueue(ReadOnlySpan<byte> payload)
     {
+        MemoryMapperLogger.Write("MemoryMappedQueueBuffer TryEnqueue ReadOnlySpan<byte>");
+
         if (!TryAcquireMutex(TimeSpan.FromSeconds(1))) return false;
         try
         {
@@ -249,6 +257,8 @@ public class MemoryMappedQueueBuffer
 
     public byte[] TryDequeue()
     {
+        MemoryMapperLogger.Write("MemoryMappedQueueBuffer TryDequeueBatch");
+
         if (!TryAcquireMutex(TimeSpan.FromSeconds(1))) return [];
 
         try
@@ -315,11 +325,12 @@ public class MemoryMappedQueueBuffer
 
     public IList<byte[]> TryDequeueBatch(int maxCount = 100)
     {
+        MemoryMapperLogger.Write("MemoryMappedQueueBuffer TryDequeueBatch");
         var results = new List<byte[]>(Math.Max(0, maxCount));
         for (var i = 0; i < maxCount; i++)
         {
             var entry = TryDequeue();
-            if (entry == null) break;
+            if (entry == Array.Empty<byte>()) break;
             results.Add(entry);
         }
         return results;
@@ -327,6 +338,7 @@ public class MemoryMappedQueueBuffer
 
     public MemoryMappedQueueStats GetStats()
     {
+
         if (!TryAcquireMutex(TimeSpan.FromMilliseconds(100)))
             return new MemoryMappedQueueStats { Available = false };
 

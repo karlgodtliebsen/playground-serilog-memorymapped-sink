@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using Serilog.Debugging;
 using Serilog.Enrichers.Span;
@@ -19,13 +20,19 @@ namespace Serilog.MemoryMapped.Sink.Tests;
 
 public class TestOfMemoryMapper(ITestOutputHelper output)
 {
+
     [Fact]
     public void VerifyMemoryMapperConfiguration()
     {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
 
+        var name = Ulid.NewUlid(DateTimeOffset.UtcNow).ToString();
+        output.WriteLine(name);
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices("the name");
-
+        var options = Options.Create(new MemoryMappedOptions() { Name = name });
+        services.AddMemoryMappedServices(options);
         var serviceProvider = services.BuildServiceProvider();
 
         var memoryMappedQueue = serviceProvider.GetRequiredService<IMemoryMappedQueue>();
@@ -104,8 +111,14 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
     [Fact]
     public void VerifyLogSink()
     {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
+        var name = Ulid.NewUlid(DateTimeOffset.UtcNow).ToString();
+        output.WriteLine(name);
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices("the name");
+        var options = Options.Create(new MemoryMappedOptions() { Name = name });
+        services.AddMemoryMappedServices(options);
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -113,7 +126,6 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
         memoryMappedQueue.Should().NotBeNull();
         var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
 
-        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
         Log.Logger = new LoggerConfiguration()
                 .WriteTo.Sink(sink, LogEventLevel.Verbose)
                 .WriteTo.Sink<TestLogEventSink>()
@@ -125,19 +137,17 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
         Log.CloseAndFlush();
     }
 
-
     [Fact]
     public void VerifyMemoryMapperEnqueueAndDequeue()
     {
-        //var jsonFormatter = new JsonFormatter();
-        //var renderedJsonFormatter = new JsonFormatter(renderMessage: true);
-        //var originalCompactFormatter = new CompactJsonFormatter();
-        //var originalRenderedJsonFormatter = new RenderedCompactJsonFormatter();
-
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
         SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
-
+        var name = Ulid.NewUlid(DateTimeOffset.UtcNow).ToString();
+        output.WriteLine(name);
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices("the name");
+        var options = Options.Create(new MemoryMappedOptions() { Name = name });
+        services.AddMemoryMappedServices(options);
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -155,13 +165,43 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
     }
 
     [Fact]
+    public void VerifyMemoryMapperEnqueueAndDequeueUsingTwoDifferentQueueBuffers()
+    {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
+        var name = Ulid.NewUlid(DateTimeOffset.UtcNow).ToString();
+        output.WriteLine(name);
+        IServiceCollection services = new ServiceCollection();
+        var options = Options.Create(new MemoryMappedOptions() { Name = name });
+
+        var memoryMappedQueue = new MemoryMappedQueue(options);
+
+        var logEvent = CreateLogEvent();
+
+        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
+        sink.Emit(logEvent);
+
+        memoryMappedQueue = new MemoryMappedQueue(options);
+
+        var @mappedEvent = memoryMappedQueue.TryDequeue();
+        @mappedEvent.Should().NotBeNull();
+        output.WriteLine($"Message {@mappedEvent!.ToJson()}");
+    }
+
+
+
+    [Fact]
     public void VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
 
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
         SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
 
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices("the name");
+        var options = Options.Create(new MemoryMappedOptions() { Name = "the name" });
+        services.AddMemoryMappedServices(options);
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -195,10 +235,13 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
     public void VerifyMultipleLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
 
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
         SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
 
         IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices("the name");
+        var options = Options.Create(new MemoryMappedOptions() { Name = "the name" });
+        services.AddMemoryMappedServices(options);
 
         var serviceProvider = services.BuildServiceProvider();
 

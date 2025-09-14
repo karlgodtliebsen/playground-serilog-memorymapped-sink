@@ -12,7 +12,7 @@ namespace Serilog.MemoryMapped.Sink.Tests;
 
 public static class HostConfigurator
 {
-    public static IHost BuildApplicationLoggingHostUsingSqLite(this IServiceProvider serviceProvider, IConfiguration configuration, string name)
+    public static IHost BuildApplicationLoggingHostUsingSqLite(this IServiceProvider serviceProvider, IConfiguration configuration)
     {
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
@@ -22,7 +22,7 @@ public static class HostConfigurator
                     services.AddSerilog(loggingBuilder, configuration);
                 });
                 services
-                    .AddMemoryMappedServices(name)
+                    .AddMemoryMappedServices(configuration)
                     .AddForwarderServices(configuration)
                     .AddHostServices(configuration)
                     .AddSqLiteServices(configuration);
@@ -33,7 +33,7 @@ public static class HostConfigurator
     }
 
     //This is dedicated to TestContainer PostgreSql, which is why the connection string is transfered. Can eb done in a better way, but beyond the scope
-    public static IHost BuildApplicationLoggingHostUsingPostgreSql(this IServiceProvider serviceProvider, IConfiguration configuration, string name, string connectionString)
+    public static IHost BuildApplicationLoggingHostUsingPostgreSql(this IServiceProvider serviceProvider, IConfiguration configuration, string connectionString)
     {
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
@@ -43,7 +43,7 @@ public static class HostConfigurator
                     services.AddSerilog(loggingBuilder, configuration);
                 });
                 services
-                    .AddMemoryMappedServices(name)
+                    .AddMemoryMappedServices(configuration)
                     .AddForwarderServices(configuration)
                     .AddHostServices(configuration)
                     .AddPostgreSqlServices(configuration, connectionString);
@@ -53,8 +53,9 @@ public static class HostConfigurator
         return host;
     }
 
-    public static IHost BuildApplicationLoggingHostUsingMsSql(this IServiceProvider serviceProvider, IConfiguration configuration, string name)
+    public static IHost BuildApplicationLoggingHostUsingMsSql(this IServiceProvider serviceProvider, IConfiguration configuration)
     {
+
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
@@ -63,7 +64,7 @@ public static class HostConfigurator
                     services.AddSerilog(loggingBuilder, configuration);
                 });
                 services
-                    .AddMemoryMappedServices(name)
+                    .AddMemoryMappedServices(configuration)
                     .AddForwarderServices(configuration)
                     .AddHostServices(configuration)
                     .AddMsSqlServices(configuration);
