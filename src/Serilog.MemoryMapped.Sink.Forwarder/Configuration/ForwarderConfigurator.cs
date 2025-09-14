@@ -11,14 +11,14 @@ public static class ForwarderConfigurator
 
     public static IServiceCollection AddForwarderServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.TryAddSingleton<ILogEventMemoryMappedShippingClient, LogEventMemoryMappedShippingClient>();
-        services.TryAddSingleton<ILogEventForwarder, LogEventForwarder>();
+        services.TryAddTransient<ILogEventMemoryMappedShippingClient, LogEventMemoryMappedShippingClient>();
+        services.TryAddTransient<ILogEventForwarder, LogEventForwarder>();
         return services;
     }
     public static IServiceCollection AddHostServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.TryAddSingleton<LogEventShippingHostedService>();
-        services.AddHostedService<LogEventShippingHostedService>();
+        services.TryAddSingleton<LogEventShippingServiceHost>();
+        services.AddHostedService<LogEventShippingServiceHost>();
         return services;
     }
 }

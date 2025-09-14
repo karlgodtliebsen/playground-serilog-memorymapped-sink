@@ -16,7 +16,7 @@ public static class RepositoryConfigurator
         var options = configuration.GetSection(DatabaseConnectionOptions.SectionName + "_MsSql").Get<DatabaseConnectionOptions>();
         if (options is null) throw new ArgumentNullException(DatabaseConnectionOptions.SectionName);
         services.TryAddSingleton(Options.Create(options));
-        services.TryAddSingleton<ILogEventRepository, MsSqlLogEventRepository>();
+        services.TryAddTransient<ILogEventRepository, MsSqlLogEventRepository>();
         return services;
     }
 }

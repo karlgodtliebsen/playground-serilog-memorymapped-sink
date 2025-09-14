@@ -17,7 +17,7 @@ public static class RepositoryConfigurator
         if (options is null) throw new ArgumentNullException(DatabaseConnectionOptions.SectionName);
         options.ConnectionString = connectionString;
         services.TryAddSingleton(Options.Create(options));
-        services.TryAddSingleton<ILogEventRepository, PostgreSqlLogEventRepository>();
+        services.TryAddTransient<ILogEventRepository, PostgreSqlLogEventRepository>();
         return services;
     }
 }

@@ -32,7 +32,7 @@ public static class HostConfigurator
         return host;
     }
 
-    //This is dedicated to TestContainer PostgreSql, which is why the connection string is transfered. Can eb done in a better way, but beyond the scope
+    //This is dedicated to TestContainer PostgreSql, which is why the connection string is transferred. Can be done in a better way, but beyond the scope
     public static IHost BuildApplicationLoggingHostUsingPostgreSql(this IServiceProvider serviceProvider, IConfiguration configuration, string connectionString)
     {
         var builder = Host.CreateDefaultBuilder()

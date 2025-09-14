@@ -19,7 +19,7 @@ public static class RepositoryConfigurator
         if (options is null) throw new ArgumentNullException(DatabaseConnectionOptions.SectionName);
 
         services.TryAddSingleton(Options.Create(options));
-        services.TryAddSingleton<ILogEventRepository, SqLiteLogEventRepository>();
+        services.TryAddTransient<ILogEventRepository, SqLiteLogEventRepository>();
         return services;
     }
 }

@@ -28,6 +28,14 @@ public static class MemoryMapperLogger
     public static void Write(string format, object? arg0 = null, object? arg1 = null, object? arg2 = null)
     {
         var o = action;
-        o?.Invoke(string.Format($"{DateTime.UtcNow:o} {format}", arg0, arg1, arg2));
+        try
+        {
+            o?.Invoke(string.Format($"{DateTime.UtcNow:o} {format}", arg0, arg1, arg2));
+        }
+        catch
+        {
+            //ignore
+            Disable();
+        }
     }
 }

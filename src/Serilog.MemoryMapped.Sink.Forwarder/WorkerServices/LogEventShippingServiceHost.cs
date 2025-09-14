@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public sealed class LogEventShippingHostedService(ILogEventMemoryMappedShippingClient workerService, Microsoft.Extensions.Logging.ILogger<LogEventShippingHostedService> logger) : BackgroundService
+public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingClient workerService, ILogger<LogEventShippingServiceHost> logger) : BackgroundService
 {
     private Task? runningTask;
 
@@ -14,7 +14,7 @@ public sealed class LogEventShippingHostedService(ILogEventMemoryMappedShippingC
     {
         var serviceName = workerService.GetType().FullName ?? "";
         if (logger.IsEnabled(LogLevel.Trace))
-            logger.LogTrace("Main Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingHostedService), serviceName);
+            logger.LogTrace("Background Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingServiceHost), serviceName);
 
         var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
 
@@ -32,18 +32,14 @@ public sealed class LogEventShippingHostedService(ILogEventMemoryMappedShippingC
 
     public override void Dispose()
     {
-        if (logger.IsEnabled(LogLevel.Trace)) logger.LogTrace("Service:{service} with Worker: {worker} is Disposed.", nameof(LogEventShippingHostedService), workerService.GetType().FullName);
-
         if (runningTask is not null)
         {
             if (runningTask.IsCompleted)
             {
                 runningTask.Dispose();
             }
-
             runningTask = null;
         }
-
         base.Dispose();
     }
 }
