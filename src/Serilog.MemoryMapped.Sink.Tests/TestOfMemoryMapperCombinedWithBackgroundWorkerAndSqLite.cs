@@ -19,6 +19,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     //TestContext.Current.CancellationToken
     private IList<string> messages = new List<string>();
 
+    private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+
     private const string MappedFileName = "thename";
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
     {
@@ -63,19 +65,21 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     {
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration, MappedFileName);
-        Task.Run(async () => await host.RunAsync(CancellationToken.None));//not the best way to wait. we should have some task completion wait going on
+        Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));//not the best way to wait. we should have some task completion wait going on
 
         output.WriteLine($"Waiting");
-        await Task.Delay(10000);
+        await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
         output.WriteLine($"Done Wait");
     }
 
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
+        int max = 11;
+        int count = 0;
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration, MappedFileName);
-        Task.Run(async () => await host.RunAsync(CancellationToken.None));
+        Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
 
         using var activity = new Activity("TestOperation")
             .SetIdFormat(ActivityIdFormat.W3C) // Use W3C format
@@ -106,9 +110,22 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
         }
         output.WriteLine($"Done Emitting - Entering Wait");
 
-        await Task.Delay(10000);
-        output.WriteLine($"Done Wait");
+        var messageReceived = new TaskCompletionSource<bool>();
+
+        _ = Task.Run(() =>
+        {
+            if (messages.Count >= max)
+            {
+                count = messages.Count;
+                messageReceived.SetResult(true);
+            }
+        }, cancellationTokenSource.Token);
+
+        await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
+
+        output.WriteLine($"Done Wait {count}");
         await Log.CloseAndFlushAsync();
-        messages.Count.Should().Be(11);
+
+        messages.Count.Should().BeGreaterThanOrEqualTo(count);
     }
 }

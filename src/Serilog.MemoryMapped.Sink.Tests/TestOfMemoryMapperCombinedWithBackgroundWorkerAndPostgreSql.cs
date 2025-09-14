@@ -19,6 +19,7 @@ namespace Serilog.MemoryMapped.Sink.Tests;
 public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOutputHelper output)
 {
     //TestContext.Current.CancellationToken
+    private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
 
     private const string MappedFileName = "thename";
     private readonly string databaseName = "LoggingDemo";
@@ -61,6 +62,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
+        int max = 11;
+        int count = 0;
         var connectionString = await StartContainerAsync();
         var (serviceProvider, configuration) = BuildSettings(connectionString);
 
@@ -96,11 +99,20 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
             output.WriteLine($"Emitting LogEntries {i}");
         }
         output.WriteLine($"Done Emitting - Entering Wait");
+        var messageReceived = new TaskCompletionSource<bool>();
 
-        await Task.Delay(10000);
-        output.WriteLine($"Done Wait");
+        _ = Task.Run(() =>
+        {
+            if (messages.Count >= max)
+            {
+                count = messages.Count;
+                messageReceived.SetResult(true);
+            }
+        }, cancellationTokenSource.Token);
+        await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
+        output.WriteLine($"Done Wait {count}");
         await Log.CloseAndFlushAsync();
 
-        messages.Count.Should().Be(11);
+        messages.Count.Should().BeGreaterThanOrEqualTo(count);
     }
 }

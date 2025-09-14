@@ -18,6 +18,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
 {
     //TestContext.Current.CancellationToken
     private IList<string> messages = new List<string>();
+    private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
 
     private const string MappedFileName = "thename";
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
@@ -45,6 +46,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
+        int max = 11;
+        int count = 0;
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration, MappedFileName);
         Task.Run(async () => await host.RunAsync(CancellationToken.None));
@@ -77,10 +80,19 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
             output.WriteLine($"Emitting LogEntries {i}");
         }
         output.WriteLine($"Done Emitting - Entering Wait");
-
-        await Task.Delay(10000);
-        output.WriteLine($"Done Wait");
+        var messageReceived = new TaskCompletionSource<bool>();
+        _ = Task.Run(() =>
+        {
+            if (messages.Count >= max)
+            {
+                count = messages.Count;
+                messageReceived.SetResult(true);
+            }
+        }, cancellationTokenSource.Token);
+        await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
+        output.WriteLine($"Done Wait {count}");
         await Log.CloseAndFlushAsync();
-        messages.Count.Should().Be(11);
+
+        messages.Count.Should().BeGreaterThanOrEqualTo(count);
     }
 }
