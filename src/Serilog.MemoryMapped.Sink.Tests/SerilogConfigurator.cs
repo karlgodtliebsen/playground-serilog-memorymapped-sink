@@ -21,7 +21,7 @@ public static class SerilogConfigurator
         optionsAction?.Invoke(services, loggingBuilder, configuration);
     }
 
-    public static Serilog.ILogger SetupSerilog(this IServiceProvider serviceProvider, IConfiguration configuration, Action<LoggerConfiguration>? action = null)
+    public static Serilog.ILogger SetupSerilogWithSink(this IServiceProvider serviceProvider, IConfiguration configuration, Action<LoggerConfiguration>? action = null)
     {
         var memoryMappedQueue = serviceProvider.GetRequiredService<IMemoryMappedQueue>();
         memoryMappedQueue.Should().NotBeNull();
@@ -42,9 +42,8 @@ public static class SerilogConfigurator
 
         action?.Invoke(logConfig);
 
-        Log.Logger = logConfig
-            .ReadFrom.Configuration(configuration)
-            .CreateLogger();
+        Log.Logger = logConfig.ReadFrom.Configuration(configuration).CreateLogger();
+
         return Log.Logger;
     }
 }

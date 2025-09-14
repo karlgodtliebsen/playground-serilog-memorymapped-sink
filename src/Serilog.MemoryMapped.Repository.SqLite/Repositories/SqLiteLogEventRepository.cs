@@ -20,16 +20,20 @@ public sealed class SqLiteLogEventRepository : LogEventRepository
 
     protected override string GetCreateTableStatement()
     {
-        return @"CREATE TABLE IF NOT EXISTS 
-    log_event (    
-    timestamp TEXT NOT NULL,
-    level VARCHAR(10) NOT NULL,
+        return @"CREATE TABLE IF NOT EXISTS log_event (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp DATETIME NOT NULL,
+    level TEXT NOT NULL,
     exception TEXT NULL,
-    rendered_message TEXT NOT NULL,    
+    rendered_message TEXT NOT NULL,
     trace_id TEXT NULL,
     span_id TEXT NULL,
     properties TEXT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_log_timestamp ON log_event(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_log_level ON log_event(level);
 ";
     }
     //private readonly uint maxDatabaseSize = 10;

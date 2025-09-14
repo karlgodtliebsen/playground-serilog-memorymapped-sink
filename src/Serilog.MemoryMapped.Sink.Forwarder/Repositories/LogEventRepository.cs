@@ -2,6 +2,7 @@
 
 using Microsoft.Extensions.Logging;
 
+using Serilog.Debugging;
 using Serilog.MemoryMapped.Sink.Sinks;
 
 using System.Data;
@@ -20,22 +21,21 @@ public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger lo
 
     private void PrintInformation(string message)
     {
-        //SelfLog.WriteLine($"Rolling database to {newFilePath}");
+        SelfLog.WriteLine(message);
         Debug.Print(message);
         Trace.WriteLine(message);
         Console.WriteLine(message);
     }
     private void PrintError(Exception ex, string action)
     {
+        SelfLog.WriteLine($"Failed {action}\n Exception: {ex}\n In Database: {GetConnectionString()}");
         Debug.Print($"Failed {action}\n Exception: {ex}\n In Database: {GetConnectionString()}");
         Trace.WriteLine($"Failed {action}\n Exception: {ex}\n In Database: {GetConnectionString()}");
         Console.WriteLine($"Failed {action}\n Exception: {ex}\n In Database: {GetConnectionString()}");
     }
 
-
     public async Task CreateTable(CancellationToken cancellationToken)
     {
-
         try
         {
             await using var connection = GetConnection();
@@ -99,19 +99,19 @@ public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger lo
                 var rowsAffected = await connection.ExecuteAsync(sqlStatement, parameters, transaction);
 
                 await transaction.CommitAsync(cancellationToken);
-
                 PrintInformation($"Successfully inserted {rowsAffected} entries into log_event table");
-                logger.LogInformation("Successfully inserted {rowsAffected} entries into log_event table", rowsAffected);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                PrintError(ex, "Unexpected error while forwarding log_event entries");
                 logger.LogError(ex, "Failed to insert {Count} entries, transaction rolled back", entriesList.Count);
                 throw;
             }
         }
         catch (Exception ex)
         {
+            PrintError(ex, "Unexpected error while forwarding log_event entries");
             logger.LogError(ex, "Unexpected error while forwarding {Count} log_event entries", entriesList.Count);
             throw;
         }
@@ -131,6 +131,7 @@ public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger lo
         }
         catch (Exception ex)
         {
+            PrintError(ex, "Connection test failed");
             logger.LogError(ex, "Connection test failed");
             return false;
         }

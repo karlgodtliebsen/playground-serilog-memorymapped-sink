@@ -35,7 +35,6 @@ public class LogEventMemoryMappedSink(IMemoryMappedQueue memoryMappedQueue,
             var result = memoryMappedQueue.TryEnqueue(logEventWrapper);
             Debug.Assert(result);
             SelfLog.WriteLine("Emitted message");
-
         }
         catch (Exception ex)
         {

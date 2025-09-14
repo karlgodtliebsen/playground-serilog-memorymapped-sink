@@ -252,8 +252,5 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
         return logEvent;
     }
 }
-//Log.Logger = new LoggerConfiguration()
-//    .WriteTo.File(new CompactJsonFormatter(), "./logs/myapp.json")
-//    .CreateLogger();
 
 
