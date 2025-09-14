@@ -1,19 +1,9 @@
-﻿using FluentAssertions;
-
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
-using Serilog.Core;
 using Serilog.Debugging;
-using Serilog.Enrichers.Span;
-using Serilog.Events;
 using Serilog.MemoryMapped.Sink.Configuration;
-using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
-using Serilog.MemoryMapped.Sink.Sinks;
-
-using System.Diagnostics;
 
 using Xunit.Abstractions;
 
@@ -21,131 +11,75 @@ namespace Serilog.MemoryMapped.Sink.Tests;
 
 public class TestOfMemoryMapperCombinedWithBackgroundWorker(ITestOutputHelper output)
 {
+    //TestContext.Current.CancellationToken
+
+    private const string MappedFileName = "thename";
+    private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
+    {
+
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
+        var configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder.AddJsonFile("appsettings.json");
+        var configuration = configurationBuilder.Build();
+        IServiceCollection services = new ServiceCollection();
+        services.AddMemoryMappedServices(MappedFileName);
+
+        services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        serviceProvider.SetupSerilog(configuration);
+        return (serviceProvider, configuration);
+    }
 
 
     [Fact]
-    public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
+    public async Task ProduceOnly()
     {
-        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
-        var configurationBuilder = new ConfigurationBuilder();
-        var configuration = configurationBuilder.Build();
-        IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices("the name");
-
-        services.AddLogging((loggingBuilder) =>
-            {
-                services.AddSerilog(loggingBuilder, configuration);
-            }
-        );
-
-        var serviceProvider = services.BuildServiceProvider();
-        //TestContext.Current.CancellationToken
-
-        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
-        serviceProvider.SetupSerilog(configuration);
-
-        var host = serviceProvider.BuildApplicationLoggingHost(configuration);
-        Task.Run(async () => await host.RunAsync(CancellationToken.None));
+        var (serviceProvider, configuration) = BuildSettings();
 
         for (int i = 0; i < 10000; i++)
         {
             Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
             Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+        }
+        output.WriteLine($"Done Emitting - Entering Wait");
+
+        await Log.CloseAndFlushAsync();
+        await Task.Delay(100);
+    }
+
+
+
+    [Fact]
+    public async Task ConsumeOnly()
+    {
+        var (serviceProvider, configuration) = BuildSettings();
+        var host = serviceProvider.BuildApplicationLoggingHost(configuration, MappedFileName);
+        Task.Run(async () => await host.RunAsync(CancellationToken.None));//not the best way to wait. we should have some task completion wait going on
+
+        output.WriteLine($"Waiting");
+        await Task.Delay(10000);
+        output.WriteLine($"Done Wait");
+    }
+
+    [Fact]
+    public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
+    {
+        var (serviceProvider, configuration) = BuildSettings();
+        var host = serviceProvider.BuildApplicationLoggingHost(configuration, MappedFileName);
+        Task.Run(async () => await host.RunAsync(CancellationToken.None));
+
+        for (int i = 0; i < 1000; i++)
+        {
+            Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+            Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
             output.WriteLine($"Emitting LogEntries {i}");
-            await Task.Delay(10);
         }
         output.WriteLine($"Done Emitting - Entering Wait");
 
         await Task.Delay(10000);
         output.WriteLine($"Done Wait");
         await Log.CloseAndFlushAsync();
-        await Task.Delay(10000);
-    }
-}
-
-
-public static class SerilogConfigurator
-{
-    public static IHost BuildApplicationLoggingHost(this IServiceProvider serviceProvider, IConfiguration configuration)
-    {
-
-        var builder = Host.CreateDefaultBuilder()
-            .ConfigureServices((context, services) =>
-            {
-                services.AddLogging(loggingBuilder =>
-                {
-                    loggingBuilder.ClearProviders();
-                    loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));
-                    // loggingBuilder.AddSerilog();
-                    loggingBuilder.AddConsole();
-                    loggingBuilder.AddDebug();
-                });
-                services.AddMemoryMappedServices("the name");//TODO handle name, that must be the same to access the same memory mapped file
-                services.AddForwarderServices(configuration);
-                services.AddSqLiteServices(configuration);
-            });
-
-
-        var host = builder.Build();
-        //host.Services.SetupSerilog(configuration);
-        return host;
-    }
-    public static void AddSerilog(this IServiceCollection services, ILoggingBuilder loggingBuilder, IConfiguration configuration, Action<IServiceCollection, ILoggingBuilder, IConfiguration>? optionsAction = null)
-    {
-        services.AddSerilog();
-        loggingBuilder.ClearProviders();
-        loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));
-        loggingBuilder.AddSerilog();
-        optionsAction?.Invoke(services, loggingBuilder, configuration);
-    }
-
-    public static Serilog.ILogger SetupSerilog(this IServiceProvider serviceProvider, IConfiguration configuration, Action<LoggerConfiguration>? action = null)
-    {
-        var memoryMappedQueue = serviceProvider.GetRequiredService<IMemoryMappedQueue>();
-        memoryMappedQueue.Should().NotBeNull();
-        var logConfig = new LoggerConfiguration();
-        logConfig = logConfig
-            .Enrich.WithMachineName()
-            .Enrich.WithThreadId()
-            .Enrich.FromLogContext()
-            .Enrich.WithSpan()
-            .Enrich.With<TraceIdEnricher>()
-            ;
-
-        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
-        logConfig
-             .WriteTo.Sink(sink, LogEventLevel.Verbose)
-             .MinimumLevel.Verbose()
-             ;
-
-        action?.Invoke(logConfig);
-
-        Log.Logger = logConfig
-            .ReadFrom.Configuration(configuration)
-            .CreateLogger();
-        return Log.Logger;
-    }
-}
-public class TraceIdEnricher : ILogEventEnricher
-{
-    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
-    {
-        var activity = Activity.Current;
-        if (activity != null)
-        {
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("TraceId", activity.TraceId.ToString()));
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("SpanId", activity.SpanId.ToString()));
-
-            // Optionally add parent span ID
-            if (activity.ParentSpanId != default)
-            {
-                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("ParentSpanId", activity.ParentSpanId.ToString()));
-            }
-        }
-        else
-        {
-            // Fallback to generating a correlation ID if no Activity
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("TraceId", Guid.NewGuid().ToString()));
-        }
     }
 }

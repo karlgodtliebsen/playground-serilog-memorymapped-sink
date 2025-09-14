@@ -2,17 +2,20 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
+using Serilog.MemoryMapped.Repository.MsSql.Configuration;
+using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
 using System.Data.Common;
 
-namespace Serilog.MemoryMapped.Sink.Forwarder.Repositories;
+namespace Serilog.MemoryMapped.Repository.MsSql.Repositories;
 
 public sealed class MsSqlLogEventRepository(
     IOptions<DatabaseConnectionOptions> options,
     ILogger<MsSqlLogEventRepository> logger)
-    : LogEventRepository(options, logger)
+    : LogEventRepository(logger)
 {
+    private readonly string connectionString = options.Value.ConnectionString;
+
     protected override string GetConnectionString()
     {
         return connectionString;
@@ -37,5 +40,5 @@ CREATE TABLE log_event (
     {
         return new SqlConnection(connectionString);
     }
-    private readonly string connectionString = options.Value.ConnectionString;
+
 }

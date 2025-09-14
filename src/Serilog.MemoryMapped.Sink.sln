@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Sink.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Sink.Forwarder", "Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj", "{1BBFF396-8DF0-419E-9D03-255CD77E839C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Repository.MsSql", "Serilog.MemoryMapped.Repository.MsSql\Serilog.MemoryMapped.Repository.MsSql.csproj", "{8FCFDA60-FB55-A88C-836E-BBEEC3F8EDFD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Repository.SqLite", "Serilog.MemoryMapped.Repository.SqLite\Serilog.MemoryMapped.Repository.SqLite.csproj", "{0F99D9B7-48DE-C639-F575-2468FC256535}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BBFF396-8DF0-419E-9D03-255CD77E839C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FCFDA60-FB55-A88C-836E-BBEEC3F8EDFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FCFDA60-FB55-A88C-836E-BBEEC3F8EDFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FCFDA60-FB55-A88C-836E-BBEEC3F8EDFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FCFDA60-FB55-A88C-836E-BBEEC3F8EDFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F99D9B7-48DE-C639-F575-2468FC256535}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F99D9B7-48DE-C639-F575-2468FC256535}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F99D9B7-48DE-C639-F575-2468FC256535}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F99D9B7-48DE-C639-F575-2468FC256535}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

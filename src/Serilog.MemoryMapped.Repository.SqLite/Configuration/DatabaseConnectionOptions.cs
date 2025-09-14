@@ -1,4 +1,4 @@
-﻿namespace Serilog.MemoryMapped.Sink.Forwarder.Configuration;
+﻿namespace Serilog.MemoryMapped.Repository.SqLite.Configuration;
 
 public class DatabaseConnectionOptions
 {

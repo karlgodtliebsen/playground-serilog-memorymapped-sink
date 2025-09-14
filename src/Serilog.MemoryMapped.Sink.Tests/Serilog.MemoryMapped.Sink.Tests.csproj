@@ -8,6 +8,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="appsettings.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="appsettings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="coverlet.collector" Version="6.0.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -37,6 +47,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.MsSql\Serilog.MemoryMapped.Repository.MsSql.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.SqLite\Serilog.MemoryMapped.Repository.SqLite.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink\Serilog.MemoryMapped.Sink.csproj" />
 	</ItemGroup>

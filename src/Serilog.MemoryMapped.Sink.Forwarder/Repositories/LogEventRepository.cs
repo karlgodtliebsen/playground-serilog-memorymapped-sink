@@ -1,9 +1,7 @@
 ﻿using Dapper;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
-using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Sinks;
 
 using System.Data;
@@ -13,7 +11,7 @@ using System.Runtime.CompilerServices;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
-public abstract class LogEventRepository(IOptions<DatabaseConnectionOptions> options, Microsoft.Extensions.Logging.ILogger logger) : ILogEventRepository
+public abstract class LogEventRepository(Microsoft.Extensions.Logging.ILogger logger) : ILogEventRepository
 {
     protected abstract string GetConnectionString();
 
