@@ -26,17 +26,11 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorker(ITestOutputHelper ou
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
-        //TODO: add serilog config
-        //$"Data Source={name};Journal Mode = WAL;";  
-
-
         SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
         var configurationBuilder = new ConfigurationBuilder();
         var configuration = configurationBuilder.Build();
         IServiceCollection services = new ServiceCollection();
         services.AddMemoryMappedServices("the name");
-        services.AddForwarderServices(configuration);
-        //services.AddSqLiteServices(configuration);
 
         services.AddLogging((loggingBuilder) =>
             {
@@ -45,14 +39,25 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorker(ITestOutputHelper ou
         );
 
         var serviceProvider = services.BuildServiceProvider();
-        var host = serviceProvider.BuildApplicationLoggingHost(configuration);
-
-        await Task.Run(async () => await host.StartAsync(CancellationToken.None));
+        //TestContext.Current.CancellationToken
 
         SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
         serviceProvider.SetupSerilog(configuration);
 
-        Log.Logger.Verbose("the message template {UserId} {t1} {t2} {t3}", "the user", "the t1", "the t2", "the t3");
+        var host = serviceProvider.BuildApplicationLoggingHost(configuration);
+        Task.Run(async () => await host.RunAsync(CancellationToken.None));
+
+        for (int i = 0; i < 10000; i++)
+        {
+            Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+            Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+            output.WriteLine($"Emitting LogEntries {i}");
+            await Task.Delay(10);
+        }
+        output.WriteLine($"Done Emitting - Entering Wait");
+
+        await Task.Delay(10000);
+        output.WriteLine($"Done Wait");
         await Log.CloseAndFlushAsync();
         await Task.Delay(10000);
     }
@@ -70,17 +75,19 @@ public static class SerilogConfigurator
                 services.AddLogging(loggingBuilder =>
                 {
                     loggingBuilder.ClearProviders();
+                    loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));
+                    // loggingBuilder.AddSerilog();
                     loggingBuilder.AddConsole();
+                    loggingBuilder.AddDebug();
                 });
-                services.AddMemoryMappedServices("the name");
-                //services.AddForwarderServices(configuration);
+                services.AddMemoryMappedServices("the name");//TODO handle name, that must be the same to access the same memory mapped file
+                services.AddForwarderServices(configuration);
                 services.AddSqLiteServices(configuration);
-
             });
 
 
         var host = builder.Build();
-        host.Services.SetupSerilog(configuration);
+        //host.Services.SetupSerilog(configuration);
         return host;
     }
     public static void AddSerilog(this IServiceCollection services, ILoggingBuilder loggingBuilder, IConfiguration configuration, Action<IServiceCollection, ILoggingBuilder, IConfiguration>? optionsAction = null)

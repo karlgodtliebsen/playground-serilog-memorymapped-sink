@@ -22,6 +22,14 @@ public static class ForwarderConfigurator
 
         return services;
     }
+    public static IServiceCollection AddHostServices(this IServiceCollection services, IConfiguration configuration)
+    {
+
+        services.TryAddSingleton<ILogEventMemoryMappedShippingClient, LogEventMemoryMappedShippingClient>();
+        services.TryAddSingleton<LogEventShippingHostedService>();
+        services.AddHostedService<LogEventShippingHostedService>();
+        return services;
+    }
 
     public static IServiceCollection AddSqLiteServices(this IServiceCollection services, IConfiguration configuration)
     {

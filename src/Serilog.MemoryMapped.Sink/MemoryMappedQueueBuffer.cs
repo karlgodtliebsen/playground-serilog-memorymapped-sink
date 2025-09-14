@@ -213,7 +213,7 @@ public class MemoryMappedQueueBuffer
             var readPos = accessor.ReadInt64(8);
             var count = accessor.ReadInt64(16);
 
-            if (count == 0) return null; // empty
+            if (count == 0) return []; // empty
 
             var actualReadPos = readPos;
 

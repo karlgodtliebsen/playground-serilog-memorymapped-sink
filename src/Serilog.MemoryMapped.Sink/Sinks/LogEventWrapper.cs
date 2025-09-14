@@ -1,5 +1,6 @@
-﻿using System.Diagnostics;
-using Serilog.Events;
+﻿using Serilog.Events;
+
+using System.Diagnostics;
 
 namespace Serilog.MemoryMapped.Sink.Sinks;
 
@@ -18,8 +19,14 @@ public class LogEventWrapper
         }
         Timestamp = timeStamp;
         Level = level.ToString();
-        TraceId = traceId;
-        SpanId = spanId;
+        if (traceId.HasValue)
+        {
+            TraceId = traceId.Value.ToString();
+        }
+        if (spanId.HasValue)
+        {
+            SpanId = spanId.Value.ToString();
+        }
         RenderedMessage = renderedMessage;
         Properties = logEventProperties.ToJson();
     }
@@ -37,12 +44,12 @@ public class LogEventWrapper
     /// <summary>
     /// The id of the trace that was active when the event was created, if any.
     /// </summary>
-    public ActivityTraceId? TraceId { get; set; }
+    public string? TraceId { get; set; }
 
     /// <summary>
     /// The id of the span that was active when the event was created, if any.
     /// </summary>
-    public ActivitySpanId? SpanId { get; set; }
+    public string? SpanId { get; set; }
 
     /// <summary>
     /// The message template describing the event.

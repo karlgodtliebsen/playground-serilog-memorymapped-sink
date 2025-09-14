@@ -191,6 +191,42 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
         output.WriteLine($"Message {@mappedEvent!.ToJson()}");
     }
 
+    [Fact]
+    public void VerifyMultipleLogEventIsEnqueuedInMemoryMapperUsingLogger()
+    {
+
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddMemoryMappedServices("the name");
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var memoryMappedQueue = serviceProvider.GetRequiredService<IMemoryMappedQueue>();
+        memoryMappedQueue.Should().NotBeNull();
+
+        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
+
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
+        Log.Logger = new LoggerConfiguration()
+                .Enrich.WithMachineName()
+                .Enrich.WithThreadId()
+                .Enrich.FromLogContext()
+                .Enrich.WithSpan()
+                .Enrich.With<TraceIdEnricher>()
+                .WriteTo.Sink(sink, LogEventLevel.Verbose)
+                .MinimumLevel.Verbose()
+                .CreateLogger()
+            ;
+
+        for (int i = 0; i < 1000; i++)
+        {
+            Log.Logger.Information("the message template {UserId} {t1} {t2} {t3}", "the user", "the t1", "the t2", "the t3");
+        }
+        Log.CloseAndFlush();
+
+
+    }
 
     private LogEvent CreateLogEvent()
     {

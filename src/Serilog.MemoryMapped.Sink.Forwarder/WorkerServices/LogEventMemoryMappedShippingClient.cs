@@ -9,9 +9,11 @@ public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQ
     {
         try
         {
+            await forwarder.Initialize(cancellationToken);
             while (!cancellationToken.IsCancellationRequested)
             {
                 var entries = memoryMappedQueue.TryDequeueBatch();
+                logger.LogInformation("StartAsync TryDequeue count {count}", entries.Count);
                 if (entries.Count > 0)
                 {
                     await forwarder.ForwardBatchAsync(entries, cancellationToken);

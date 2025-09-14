@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 using Serilog.MemoryMapped.Sink.Sinks;
 
@@ -8,7 +7,10 @@ namespace Serilog.MemoryMapped.Sink.Forwarder;
 
 public class LogEventForwarder(ILogEventRepository repository, ILogger<LogEventForwarder> logger) : ILogEventForwarder
 {
-    private readonly ForwarderOptions forwarderOptions = new();
+    public async Task Initialize(CancellationToken cancellationToken)
+    {
+        await repository.CreateTable(cancellationToken);
+    }
 
     public async Task ForwardAsync(LogEventWrapper entry, CancellationToken cancellationToken)
     {

@@ -44,6 +44,7 @@ public abstract class LogEventRepository(IOptions<DatabaseConnectionOptions> opt
             await connection.OpenAsync(cancellationToken);
             await connection.ExecuteAsync(GetCreateTableStatement());
             PrintInformation($"Successfully Created log_event Table");
+            logger.LogInformation("Successfully Created log_event Table");
         }
         catch (Exception ex)
         {
@@ -64,13 +65,6 @@ public abstract class LogEventRepository(IOptions<DatabaseConnectionOptions> opt
             yield return logEvent;
         }
     }
-
-
-    //sqlCommand.Parameters.Add(new SQLiteParameter("@timeStamp", DbType.DateTime2));
-    //sqlCommand.Parameters.Add(new SQLiteParameter("@level", DbType.String));
-    //sqlCommand.Parameters.Add(new SQLiteParameter("@exception", DbType.String));
-    //sqlCommand.Parameters.Add(new SQLiteParameter("@renderedMessage", DbType.String));
-    //sqlCommand.Parameters.Add(new SQLiteParameter("@properties", DbType.String));
 
 
     public async Task Add(IEnumerable<LogEventWrapper> entries, CancellationToken cancellationToken)
@@ -109,6 +103,7 @@ public abstract class LogEventRepository(IOptions<DatabaseConnectionOptions> opt
                 await transaction.CommitAsync(cancellationToken);
 
                 PrintInformation($"Successfully inserted {rowsAffected} entries into log_event table");
+                logger.LogInformation("Successfully inserted {rowsAffected} entries into log_event table", rowsAffected);
             }
             catch (Exception ex)
             {

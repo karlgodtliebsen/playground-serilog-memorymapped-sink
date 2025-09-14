@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public sealed class LogEventShippingHostedService(ILogEventMemoryMappedShippingClient workerService, Microsoft.Extensions.Logging.ILogger logger) : BackgroundService
+public sealed class LogEventShippingHostedService(ILogEventMemoryMappedShippingClient workerService, Microsoft.Extensions.Logging.ILogger<LogEventShippingHostedService> logger) : BackgroundService
 {
     private Task? runningTask;
 
