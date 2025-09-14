@@ -5,6 +5,7 @@ namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQueue, ILogEventForwarder forwarder,
     ILogger<LogEventMemoryMappedShippingClient> logger) : ILogEventMemoryMappedShippingClient
 {
+    private readonly int monitoringInterval = 10;
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         try
@@ -18,7 +19,7 @@ public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQ
                 {
                     await forwarder.ForwardBatchAsync(entries, cancellationToken);
                 }
-                await Task.Delay(10, cancellationToken);//TODO: configure this
+                await Task.Delay(monitoringInterval, cancellationToken);
             }
         }
         catch (TaskCanceledException)

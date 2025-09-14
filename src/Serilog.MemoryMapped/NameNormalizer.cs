@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Serilog.MemoryMapped.Sink;
+namespace Serilog.MemoryMapped;
 
 internal static class NameNormalizer
 {

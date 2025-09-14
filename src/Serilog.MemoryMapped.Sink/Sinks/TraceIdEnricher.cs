@@ -2,7 +2,7 @@
 using Serilog.Core;
 using Serilog.Events;
 
-namespace Serilog.MemoryMapped.Sink.Tests;
+namespace Serilog.MemoryMapped.Sink.Sinks;
 
 public class TraceIdEnricher : ILogEventEnricher
 {

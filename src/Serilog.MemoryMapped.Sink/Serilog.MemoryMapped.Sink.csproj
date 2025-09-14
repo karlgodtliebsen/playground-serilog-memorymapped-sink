@@ -20,4 +20,8 @@
 
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\Serilog.MemoryMapped\Serilog.MemoryMapped.csproj" />
+	</ItemGroup>
+
 </Project>

@@ -14,8 +14,7 @@ public sealed class LogEventShippingHostedService(ILogEventMemoryMappedShippingC
     {
         var serviceName = workerService.GetType().FullName ?? "";
         if (logger.IsEnabled(LogLevel.Trace))
-            logger.LogTrace("Main Service:{service} with Worker: {worker} is running.",
-                nameof(LogEventShippingHostedService), serviceName);
+            logger.LogTrace("Main Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingHostedService), serviceName);
 
         var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
 

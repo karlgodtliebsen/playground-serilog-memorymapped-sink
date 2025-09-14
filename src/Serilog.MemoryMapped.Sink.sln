@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Reposi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Repository.PostgreSql", "Serilog.MemoryMapped.Repository.PostgreSql\Serilog.MemoryMapped.Repository.PostgreSql.csproj", "{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped", "Serilog.MemoryMapped\Serilog.MemoryMapped.csproj", "{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

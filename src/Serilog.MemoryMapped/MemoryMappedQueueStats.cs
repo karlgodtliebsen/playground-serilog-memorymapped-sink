@@ -1,4 +1,4 @@
-﻿namespace Serilog.MemoryMapped.Sink;
+﻿namespace Serilog.MemoryMapped;
 
 public class MemoryMappedQueueStats
 {
