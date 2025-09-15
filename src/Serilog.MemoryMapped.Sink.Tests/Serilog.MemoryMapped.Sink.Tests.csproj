@@ -8,21 +8,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="appsettings.json" />
+		<None Remove="appsettings.json" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Content Include="appsettings.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
+		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="coverlet.collector" Version="6.0.4">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
 		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
@@ -37,6 +32,7 @@
 		<PackageReference Include="Serilog.Sinks.Map" Version="2.0.0" />
 		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
 		<PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" />
 
 
 		<PackageReference Include="Testcontainers" Version="4.7.0" />
@@ -46,17 +42,21 @@
 		<PackageReference Include="Testcontainers.PostgreSql" Version="4.7.0" />
 		<PackageReference Include="Testcontainers.RabbitMq" Version="4.7.0" />
 
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+		<PackageReference Include="Polly" Version="8.6.3" />
+		<PackageReference Include="Ulid" Version="1.4.1" />
 
 
 		<PackageReference Include="FluentAssertions" Version="[7.0.0]" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-		<PackageReference Include="Polly" Version="8.6.3" />
-		<PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" />
-		<PackageReference Include="Ulid" Version="1.4.1" />
-		<PackageReference Include="xunit" Version="2.9.3" />
+
+		<PackageReference Include="xunit.v3" Version="3.0.1" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="coverlet.collector" Version="6.0.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -66,9 +66,10 @@
 		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.MsSql\Serilog.MemoryMapped.Repository.MsSql.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.PostgreSql\Serilog.MemoryMapped.Repository.PostgreSql.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.SqLite\Serilog.MemoryMapped.Repository.SqLite.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Sink.Console\Serilog.MemoryMapped.Sink.Console.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink\Serilog.MemoryMapped.Sink.csproj" />
-		<ProjectReference Include="..\Serilog.MemoryMapped\Serilog.MemoryMapped.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Queue\Serilog.MemoryMapped.Queue.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

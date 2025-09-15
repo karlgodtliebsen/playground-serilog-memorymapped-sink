@@ -17,12 +17,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Reposi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Repository.PostgreSql", "Serilog.MemoryMapped.Repository.PostgreSql\Serilog.MemoryMapped.Repository.PostgreSql.csproj", "{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped", "Serilog.MemoryMapped\Serilog.MemoryMapped.csproj", "{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		..\README.md = ..\README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serilog.MemoryMapped.Queue", "Serilog.MemoryMapped.Queue\Serilog.MemoryMapped.Queue.csproj", "{B9E21654-763A-7DEE-19A8-03C770834EFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -58,10 +58,10 @@ Global
 		{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CD71552-8EE7-D3F6-CB76-C85B4D7FB567}.Release|Any CPU.Build.0 = Release|Any CPU
-		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{05833D36-7FCC-4B24-7FB5-BD2CF7E16728}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9E21654-763A-7DEE-19A8-03C770834EFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9E21654-763A-7DEE-19A8-03C770834EFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9E21654-763A-7DEE-19A8-03C770834EFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9E21654-763A-7DEE-19A8-03C770834EFF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

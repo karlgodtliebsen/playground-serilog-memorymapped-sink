@@ -1,20 +1,20 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Serilog.Events;
+using Serilog.MemoryMapped.Queue.Monitor;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingClient workerService, ILogger logger) : BackgroundService
+public sealed class LogMonitorServiceHost(IMemoryMappedQueueMonitor workerService, ILogger logger) : BackgroundService
 {
     private Task? runningTask;
 
     private const int ContinuousRetryIntervalMinutes = 1;
     private readonly TimeSpan continuousRetryTimeSpan = TimeSpan.FromMinutes(ContinuousRetryIntervalMinutes);
+    private readonly int monitoringInterval = 10;
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var serviceName = workerService.GetType().FullName ?? "";
-        if (logger.IsEnabled(LogEventLevel.Verbose)) logger.Verbose("Background Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingServiceHost), serviceName);
+        var serviceName = nameof(LogMonitorServiceHost);
+        logger.Information("Background Service:{service} is running.", serviceName);
 
         var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
 
@@ -22,7 +22,8 @@ public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingCli
         {
             if (!ct.IsCancellationRequested)
             {
-                await workerService.StartAsync(cancellationToken);
+                await workerService.ExecuteAsync(cancellationToken);
+                await Task.Delay(monitoringInterval, cancellationToken);
             }
         }, cancellationToken);
 
@@ -38,8 +39,11 @@ public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingCli
             {
                 runningTask.Dispose();
             }
+
             runningTask = null;
         }
+
+        workerService.Dispose();
         base.Dispose();
     }
 }

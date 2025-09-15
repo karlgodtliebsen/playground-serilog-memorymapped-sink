@@ -1,28 +1,29 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Serilog.Events;
+using Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
+namespace Serilog.MemoryMapped.Sink.Console;
 
-public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingClient workerService, ILogger logger) : BackgroundService
+public sealed class LogProducerConsoleHost(ILogger<LogProducerConsoleHost> logger) : BackgroundService
 {
     private Task? runningTask;
-
     private const int ContinuousRetryIntervalMinutes = 1;
     private readonly TimeSpan continuousRetryTimeSpan = TimeSpan.FromMinutes(ContinuousRetryIntervalMinutes);
+    private readonly int monitoringInterval = 10;
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var serviceName = workerService.GetType().FullName ?? "";
-        if (logger.IsEnabled(LogEventLevel.Verbose)) logger.Verbose("Background Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingServiceHost), serviceName);
+        var serviceName = nameof(LogProducerConsoleHost);
+        logger.LogInformation("Background Service:{service} is running.", serviceName);
 
         var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
 
         runningTask = combinedPolicy.ExecuteAsync(async (ct) =>
         {
-            if (!ct.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
-                await workerService.StartAsync(cancellationToken);
+                LogProducer.Produce(System.Console.WriteLine, logger);
+                await Task.Delay(monitoringInterval, cancellationToken);
             }
         }, cancellationToken);
 
@@ -38,8 +39,10 @@ public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingCli
             {
                 runningTask.Dispose();
             }
+
             runningTask = null;
         }
+
         base.Dispose();
     }
 }

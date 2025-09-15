@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Serilog.Events;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQueue, ILogEventForwarder forwarder,
-    ILogger<LogEventMemoryMappedShippingClient> logger) : ILogEventMemoryMappedShippingClient
+public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQueue, ILogEventForwarder forwarder, ILogger logger) : ILogEventMemoryMappedShippingClient
 {
     private readonly int monitoringInterval = 10;
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -14,7 +13,7 @@ public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQ
             while (!cancellationToken.IsCancellationRequested)
             {
                 var entries = memoryMappedQueue.TryDequeueBatch();
-                if (logger.IsEnabled(LogLevel.Trace)) logger.LogTrace("StartAsync TryDequeue count {count}", entries.Count);
+                if (logger.IsEnabled(LogEventLevel.Verbose)) logger.Verbose("StartAsync TryDequeue count {count}", entries.Count);
                 if (entries.Count > 0)
                 {
                     await forwarder.ForwardBatchAsync(entries, cancellationToken);
@@ -24,11 +23,11 @@ public class LogEventMemoryMappedShippingClient(IMemoryMappedQueue memoryMappedQ
         }
         catch (TaskCanceledException)
         {
-            if (logger.IsEnabled(LogLevel.Trace)) logger.LogTrace("StartAsync method cancelled for LogEvent Shipping Client.");
+            if (logger.IsEnabled(LogEventLevel.Verbose)) logger.Verbose("StartAsync method cancelled for LogEvent Shipping Client.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An unexpected error occurred in StartAsync LogEvent Shipping Client method.");
+            logger.Error(ex, "An unexpected error occurred in StartAsync LogEvent Shipping Client method.");
             throw;
         }
     }

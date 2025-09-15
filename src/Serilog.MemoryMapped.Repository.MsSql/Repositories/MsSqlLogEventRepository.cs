@@ -1,17 +1,12 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Logging;
+﻿using System.Data.Common;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
-
 using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 
-using System.Data.Common;
-
 namespace Serilog.MemoryMapped.Repository.MsSql.Repositories;
 
-public sealed class MsSqlLogEventRepository(
-    IOptions<DatabaseConnectionOptions> options,
-    ILogger<MsSqlLogEventRepository> logger)
+public sealed class MsSqlLogEventRepository(IOptions<DatabaseConnectionOptions> options, ILogger logger)
     : LogEventRepository(logger)
 {
     private readonly string connectionString = options.Value.ConnectionString;

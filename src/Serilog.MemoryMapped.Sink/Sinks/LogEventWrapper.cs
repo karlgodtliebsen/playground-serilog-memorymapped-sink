@@ -1,11 +1,13 @@
-﻿using Serilog.Events;
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using MemoryPack;
+using Serilog.Events;
 
 namespace Serilog.MemoryMapped.Sink.Sinks;
 
-public class LogEventWrapper
+[MemoryPackable]
+public partial class LogEventWrapper
 {
+    [MemoryPackConstructor]
     public LogEventWrapper()
     {
     }
@@ -13,10 +15,6 @@ public class LogEventWrapper
     public LogEventWrapper(DateTimeOffset timeStamp, LogEventLevel level, string messageTemplate, string renderedMessage, Exception? exception,
         ActivityTraceId? traceId, ActivitySpanId? spanId, IReadOnlyDictionary<string, LogEventPropertyValue> logEventProperties)
     {
-        if (exception is not null)
-        {
-            Exception = exception.ToString();
-        }
         Timestamp = timeStamp;
         Level = level.ToString();
         if (traceId.HasValue)
@@ -29,6 +27,7 @@ public class LogEventWrapper
         }
         RenderedMessage = renderedMessage;
         MessageTemplate = messageTemplate;
+        Exception = exception?.ToString();
         Properties = logEventProperties.ToJson();
     }
 
@@ -62,7 +61,6 @@ public class LogEventWrapper
     /// Properties associated with the event, including those presented in <see cref="LogEvent.MessageTemplate"/>.
     /// </summary>
     public string Properties { get; init; }
-
 
     /// <summary>
     /// An exception associated with the event, or null.

@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Serilog.Events;
+using Serilog.MemoryMapped.Queue.Monitor;
+using Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
+namespace Serilog.MemoryMapped.Sink.Console;
 
-public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingClient workerService, ILogger logger) : BackgroundService
+public sealed class LogMonitorServiceHost(IMemoryMappedQueueMonitor workerService, ILogger<LogMonitorServiceHost> logger) : BackgroundService
 {
     private Task? runningTask;
 
@@ -13,18 +14,12 @@ public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingCli
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var serviceName = workerService.GetType().FullName ?? "";
-        if (logger.IsEnabled(LogEventLevel.Verbose)) logger.Verbose("Background Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingServiceHost), serviceName);
+        var serviceName = nameof(LogMonitorServiceHost);
+        logger.LogInformation("Background Service:{service} is running.", serviceName);
 
         var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
 
-        runningTask = combinedPolicy.ExecuteAsync(async (ct) =>
-        {
-            if (!ct.IsCancellationRequested)
-            {
-                await workerService.StartAsync(cancellationToken);
-            }
-        }, cancellationToken);
+        runningTask = combinedPolicy.ExecuteAsync(async (ct) => { await workerService.ExecuteAsync(ct); }, cancellationToken);
 
         return runningTask;
     }
@@ -38,8 +33,11 @@ public sealed class LogEventShippingServiceHost(ILogEventMemoryMappedShippingCli
             {
                 runningTask.Dispose();
             }
+
             runningTask = null;
         }
+
+        workerService.Dispose();
         base.Dispose();
     }
 }

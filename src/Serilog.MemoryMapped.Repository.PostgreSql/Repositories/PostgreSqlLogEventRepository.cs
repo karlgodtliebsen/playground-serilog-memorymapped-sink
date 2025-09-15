@@ -13,7 +13,8 @@ namespace Serilog.MemoryMapped.Repository.PostgreSql.Repositories;
 public sealed class PostgreSqlLogEventRepository : LogEventRepository
 {
     private readonly string connectionString;
-    public PostgreSqlLogEventRepository(IOptions<DatabaseConnectionOptions> options, ILogger<PostgreSqlLogEventRepository> logger) : base(logger)
+
+    public PostgreSqlLogEventRepository(IOptions<DatabaseConnectionOptions> options, ILogger logger) : base(logger)
     {
         connectionString = BuildConnectionString(options.Value.ConnectionString);
     }

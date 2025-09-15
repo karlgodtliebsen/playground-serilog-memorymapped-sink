@@ -1,11 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-
-using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
+﻿using Serilog.MemoryMapped.Sink.Forwarder.Repositories;
 using Serilog.MemoryMapped.Sink.Sinks;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder;
 
-public class LogEventForwarder(ILogEventRepository repository, ILogger<LogEventForwarder> logger) : ILogEventForwarder
+public class LogEventForwarder(ILogEventRepository repository) : ILogEventForwarder
 {
     public async Task Initialize(CancellationToken cancellationToken)
     {
