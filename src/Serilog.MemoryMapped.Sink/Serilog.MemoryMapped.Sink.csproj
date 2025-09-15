@@ -22,7 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Serilog.MemoryMapped\Serilog.MemoryMapped.csproj" />
+	  <ProjectReference Include="..\Serilog.MemoryMapped.Queue\Serilog.MemoryMapped.Queue.csproj" />
 	</ItemGroup>
 
 </Project>

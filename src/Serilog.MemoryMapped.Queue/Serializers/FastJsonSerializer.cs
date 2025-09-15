@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-using System.Text.Json;
-using MemoryPack;
+﻿using System.Text.Json;
 
 namespace Serilog.MemoryMapped.Serializers;
 
@@ -32,20 +30,5 @@ public class FastJsonSerializer : IFastSerializer
     public T? Deserialize<T>(byte[] buffer) where T : class
     {
         return buffer == Array.Empty<byte>() ? null : JsonSerializer.Deserialize<T>(buffer.AsSpan(), JsonOpts);
-    }
-}
-
-public class FastMemoryPackSerializer : IFastSerializer
-{
-    public ReadOnlySpan<byte> Serialize<T>(T entry) where T : class
-    {
-        var writer = new ArrayBufferWriter<byte>();
-        MemoryPackSerializer.Serialize(writer, entry);
-        return writer.WrittenSpan;
-    }
-
-    public T? Deserialize<T>(ReadOnlySpan<byte> buffer) where T : class
-    {
-        return MemoryPackSerializer.Deserialize<T>(buffer);
     }
 }

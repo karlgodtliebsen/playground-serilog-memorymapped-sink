@@ -68,7 +68,7 @@
 		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.SqLite\Serilog.MemoryMapped.Repository.SqLite.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink\Serilog.MemoryMapped.Sink.csproj" />
-		<ProjectReference Include="..\Serilog.MemoryMapped\Serilog.MemoryMapped.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Queue\Serilog.MemoryMapped.Queue.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
