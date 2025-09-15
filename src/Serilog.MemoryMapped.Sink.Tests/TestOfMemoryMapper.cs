@@ -1,19 +1,16 @@
-﻿using FluentAssertions;
-
+﻿using System.Diagnostics;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-
 using Serilog.Debugging;
 using Serilog.Enrichers.Span;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
 using Serilog.Formatting.Json;
+using Serilog.MemoryMapped.Serializers;
 using Serilog.MemoryMapped.Sink.Configuration;
 using Serilog.MemoryMapped.Sink.Sinks;
 using Serilog.Parsing;
-
-using System.Diagnostics;
-
 using Xunit.Abstractions;
 
 namespace Serilog.MemoryMapped.Sink.Tests;
@@ -165,7 +162,7 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
     }
 
     [Fact]
-    public void VerifyMemoryMapperEnqueueAndDequeueUsingTwoDifferentQueueBuffers()
+    public void VerifyMemoryMapperEnqueueAndDequeueUsingTwoDifferentQueueBuffersWithJSon()
     {
         MemoryMapperLogger.Disable();
         MemoryMapperLogger.Enable(output.WriteLine);
@@ -174,21 +171,47 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
         output.WriteLine(name);
         IServiceCollection services = new ServiceCollection();
         var options = Options.Create(new MemoryMappedOptions() { Name = name });
+        IFastSerializer serializer = new FastJsonSerializer();
 
-        var memoryMappedQueue = new MemoryMappedQueue(options);
+        var memoryMappedQueue = new MemoryMappedQueue(options, serializer);
 
         var logEvent = CreateLogEvent();
 
         var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
         sink.Emit(logEvent);
-
-        memoryMappedQueue = new MemoryMappedQueue(options);
+        serializer = new FastJsonSerializer();
+        memoryMappedQueue = new MemoryMappedQueue(options, serializer);
 
         var @mappedEvent = memoryMappedQueue.TryDequeue();
         @mappedEvent.Should().NotBeNull();
         output.WriteLine($"Message {@mappedEvent!.ToJson()}");
     }
 
+    [Fact]
+    public void VerifyMemoryMapperEnqueueAndDequeueUsingTwoDifferentQueueBuffersWithMemoryPack()
+    {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
+        SelfLog.Enable(msg => output.WriteLine($"Serilog: {msg}"));
+        var name = Ulid.NewUlid(DateTimeOffset.UtcNow).ToString();
+        output.WriteLine(name);
+        IServiceCollection services = new ServiceCollection();
+        var options = Options.Create(new MemoryMappedOptions() { Name = name });
+        IFastSerializer serializer = new FastMemoryPackSerializer();
+
+        var memoryMappedQueue = new MemoryMappedQueue(options, serializer);
+
+        var logEvent = CreateLogEvent();
+
+        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
+        sink.Emit(logEvent);
+        serializer = new FastMemoryPackSerializer();
+        memoryMappedQueue = new MemoryMappedQueue(options, serializer);
+
+        var @mappedEvent = memoryMappedQueue.TryDequeue();
+        @mappedEvent.Should().NotBeNull();
+        output.WriteLine($"Message {@mappedEvent!.ToJson()}");
+    }
 
 
     [Fact]
@@ -262,7 +285,7 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
                 .CreateLogger()
             ;
 
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             Log.Logger.Information("the message template {UserId} {t1} {t2} {t3}", "the user", "the t1", "the t2", "the t3");
         }
@@ -287,8 +310,8 @@ public class TestOfMemoryMapper(ITestOutputHelper output)
 
         var logEventProperties = new List<LogEventProperty>()
         {
-            new LogEventProperty("the name-1",new ScalarValue(42)),
-            new LogEventProperty("the name-2",new ScalarValue(43))
+            new("the name-1", new ScalarValue(42)),
+            new("the name-2", new ScalarValue(43))
         };
         var logEvent = new LogEvent(DateTimeOffset.UtcNow, LogEventLevel.Debug, new Exception("exception message"),
             new MessageTemplate("the message template {UserId} {t1} {t2} {t3} ", messageTemplateTokens), logEventProperties, traceId, spanId);

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Serilog.MemoryMapped.Serializers;
 
 namespace Serilog.MemoryMapped.Sink.Configuration;
 
@@ -16,12 +17,14 @@ public static class MemoryMappedSinkConfigurator
         var options = Options.Create(cfg);
         services.TryAddSingleton(options);
         services.TryAddSingleton<IMemoryMappedQueue, MemoryMappedQueue>();
+        services.TryAddSingleton<IFastSerializer, FastMemoryPackSerializer>();
         return services;
     }
 
     public static IServiceCollection AddMemoryMappedServices(this IServiceCollection services, IOptions<MemoryMappedOptions> options)
     {
-        services.TryAddSingleton<IMemoryMappedQueue>((sp) => new MemoryMappedQueue(options));
+        IFastSerializer serializer = new FastMemoryPackSerializer();
+        services.TryAddSingleton<IMemoryMappedQueue>((sp) => new MemoryMappedQueue(options, serializer));
         return services;
     }
 }

@@ -15,7 +15,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
 {
     //TestContext.Current.CancellationToken
     private readonly IList<string> messages = new List<string>();
-    private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+    private readonly CancellationTokenSource cancellationTokenSource = new(TimeSpan.FromMinutes(1));
 
     private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
     {
@@ -45,8 +45,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
-        int max = 11;
-        int count = 0;
+        var max = 11;
+        var count = 0;
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration);
         Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
@@ -60,7 +60,8 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
                     count = messages.Count;
                     messageReceived.SetResult(true);
                 }
-                await Task.Delay(10);
+
+                await Task.Delay(1);
             }
 
         }, cancellationTokenSource.Token);

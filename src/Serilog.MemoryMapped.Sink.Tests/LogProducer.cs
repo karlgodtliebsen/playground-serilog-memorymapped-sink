@@ -1,7 +1,5 @@
-﻿using Serilog.Context;
-
-using System.Diagnostics;
-
+﻿using System.Diagnostics;
+using Serilog.Context;
 using Xunit.Abstractions;
 
 namespace Serilog.MemoryMapped.Sink.Tests;
@@ -27,14 +25,16 @@ public static class LogProducer
         };
         ActivitySource.AddActivityListener(listener);
 
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString()))
             using (LogContext.PushProperty("SpanId", Activity.Current?.SpanId.ToString()))
             {
                 Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
                 Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+                Log.Logger.Error(new FileNotFoundException("No Luck", "the file not found"), "the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
             }
+
             output.WriteLine($"Emitting LogEntries {i}");
         }
         output.WriteLine($"Done Emitting - Entering Wait");
