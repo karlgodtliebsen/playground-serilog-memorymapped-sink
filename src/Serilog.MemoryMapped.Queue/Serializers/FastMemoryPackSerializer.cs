@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using MemoryPack;
 
-namespace Serilog.MemoryMapped.Serializers;
+namespace Serilog.MemoryMapped.Queue.Serializers;
 
 public class FastMemoryPackSerializer : IFastSerializer
 {

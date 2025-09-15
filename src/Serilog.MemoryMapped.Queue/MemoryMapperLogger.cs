@@ -1,4 +1,4 @@
-﻿namespace Serilog.MemoryMapped;
+﻿namespace Serilog.MemoryMapped.Queue;
 
 public static class MemoryMapperLogger
 {

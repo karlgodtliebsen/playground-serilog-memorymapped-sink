@@ -13,21 +13,17 @@ CancellationTokenSource cancellationTokenSource = new();
 var (services, configuration) = ConsoleAppConfigurator.CreateSettings();
 var serviceProvider = ConsoleAppConfigurator.Build(services, configuration);
 
-//var serilogHost = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
 var mssqlHost = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration);
 
-//TODO: start a test container instance for postgresql. get the connection string and pass along
+//start a test container instance for postgresql. get the connection string and pass along
+//var serilogHost = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
 //var postgreSqlHost = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration);
 
+var monitorHost = serviceProvider.BuildMonitorHost(configuration);
 var host = serviceProvider.BuildHost(configuration);
-
-//TODO: add monitor
 var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
 //start multiple hosts
-await HostConfigurator.RunHostsAsync([ /*serilogHost,*/ mssqlHost, host], title, logger, cancellationTokenSource.Token);
-
-
-
+await HostConfigurator.RunHostsAsync([mssqlHost, monitorHost, host], title, logger, cancellationTokenSource.Token);
 
 

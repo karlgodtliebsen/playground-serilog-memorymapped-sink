@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Serilog.MemoryMapped.Queue.Configuration;
+using Serilog.MemoryMapped.Sink.Configuration;
 
-namespace Serilog.MemoryMapped;
+namespace Serilog.MemoryMapped.Queue.Monitor;
 
 
 // Enhanced Memory Mapped Queue Monitor with comprehensive monitoring capabilities
@@ -43,7 +44,7 @@ namespace Serilog.MemoryMapped;
 This monitoring is ESSENTIAL for production logging systems using memory-mapped buffers!
 */
 
-public class MemoryMappedQueueMonitor : BackgroundService
+public class MemoryMappedQueueMonitor : IMemoryMappedQueueMonitor
 {
     private readonly MemoryMappedQueueBuffer buffer;
     private readonly ILogger<MemoryMappedQueueMonitor> logger;
@@ -59,18 +60,18 @@ public class MemoryMappedQueueMonitor : BackgroundService
     private long lastMessageCount = 0;
     private DateTime lastMetricsTime = DateTime.UtcNow;
 
-    public MemoryMappedQueueMonitor(string bufferName, IOptions<MonitoringOptions> options, ILogger<MemoryMappedQueueMonitor> logger)
+    public MemoryMappedQueueMonitor(IOptions<MemoryMappedOptions> mmOptions, IOptions<MonitoringOptions> monOptions, ILogger<MemoryMappedQueueMonitor> logger)
     {
-        this.bufferName = bufferName;
+        this.bufferName = mmOptions.Value.Name;
         buffer = new MemoryMappedQueueBuffer(bufferName);
         this.logger = logger;
-        cfg = options.Value;
+        cfg = monOptions.Value;
         monitoringInterval = cfg.MonitoringInterval;
         alertInterval = cfg.AlertInterval;
         thresholds = cfg.Thresholds;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Starting buffer monitor for: {BufferName}", bufferName);
 
@@ -78,7 +79,7 @@ public class MemoryMappedQueueMonitor : BackgroundService
         {
             try
             {
-                await CollectAndAnalyzeMetrics();
+                CollectAndAnalyzeMetrics();
                 await Task.Delay(monitoringInterval, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -95,7 +96,7 @@ public class MemoryMappedQueueMonitor : BackgroundService
         logger.LogInformation("Buffer monitor stopped for: {BufferName}", bufferName);
     }
 
-    private async Task CollectAndAnalyzeMetrics()
+    private void CollectAndAnalyzeMetrics()
     {
         var stats = buffer.GetStats();
         if (!stats.Available)
@@ -135,7 +136,7 @@ public class MemoryMappedQueueMonitor : BackgroundService
         LogCurrentMetrics(metrics);
 
         // Check for alerts
-        await CheckAndRaiseAlerts(metrics);
+        CheckAndRaiseAlerts(metrics);
 
         // Update tracking variables
         lastMessageCount = stats.MessageCount;
@@ -152,7 +153,7 @@ public class MemoryMappedQueueMonitor : BackgroundService
             metrics.AvailableSpace, metrics.MessagesPerSecond);
     }
 
-    private async Task CheckAndRaiseAlerts(BufferMetrics current)
+    private void CheckAndRaiseAlerts(BufferMetrics current)
     {
         var now = DateTime.UtcNow;
         var timeSinceLastAlert = now - lastAlertTime;
@@ -222,7 +223,7 @@ public class MemoryMappedQueueMonitor : BackgroundService
     {
         var totalCapacity = stats.CapacityMB * 1024.0 * 1024.0;
         var usedSpace = totalCapacity - stats.AvailableSpace;
-        return (usedSpace / totalCapacity) * 100.0;
+        return usedSpace / totalCapacity * 100.0;
     }
 
     private double CalculateGrowthRate()
@@ -269,68 +270,26 @@ public class MemoryMappedQueueMonitor : BackgroundService
 
     private string DetermineHealthStatus(BufferMetrics? current)
     {
-        if (current == null)
-            return "Unknown";
-
-        if (current.UsagePercentage > thresholds.CriticalUsagePercentage)
-            return "Critical";
-
-        if (current.UsagePercentage > thresholds.HighUsagePercentage)
-            return "Warning";
-
-        if (current.MessageCount > thresholds.MaxMessageBacklog)
-            return "Warning";
-
-        return "Healthy";
+        return current == null
+            ? "Unknown"
+            : current.UsagePercentage > thresholds.CriticalUsagePercentage
+                ? "Critical"
+                : current.UsagePercentage > thresholds.HighUsagePercentage
+                    ? "Warning"
+                    : current.MessageCount > thresholds.MaxMessageBacklog
+                        ? "Warning"
+                        : "Healthy";
     }
 
-    public override void Dispose()
+    public void Dispose()
     {
         buffer?.Dispose();
-        base.Dispose();
     }
 }
 
 // Configuration classes
-public class MonitoringOptions
-{
-    public TimeSpan MonitoringInterval { get; set; } = TimeSpan.FromSeconds(30);
-    public TimeSpan AlertInterval { get; set; } = TimeSpan.FromMinutes(5);
-    public MonitoringThresholds Thresholds { get; set; } = new();
-}
-
-public class MonitoringThresholds
-{
-    public double HighUsagePercentage { get; set; } = 75.0;
-    public double CriticalUsagePercentage { get; set; } = 90.0;
-    public long MaxMessageBacklog { get; set; } = 10000;
-    public double MinThroughputMessagesPerSecond { get; set; } = 1.0;
-    public double MaxGrowthRatePercentPerMinute { get; set; } = 10.0;
-}
 
 // Data structures for metrics
-public class BufferMetrics
-{
-    public DateTime Timestamp { get; set; }
-    public long MessageCount { get; set; }
-    public long AvailableSpace { get; set; }
-    public long CapacityBytes { get; set; }
-    public double MessagesPerSecond { get; set; }
-    public double UsagePercentage { get; set; }
-}
-
-public class BufferHealthReport
-{
-    public string BufferName { get; set; }
-    public string Status { get; set; }
-    public BufferMetrics CurrentMetrics { get; set; }
-    public double AverageUsagePercentage { get; set; }
-    public double AverageThroughput { get; set; }
-    public double PeakUsagePercentage { get; set; }
-    public double PeakThroughput { get; set; }
-    public int TotalSamplesCollected { get; set; }
-    public TimeSpan MonitoringDuration { get; set; }
-}
 
 /*
 // Health check integration for ASP.NET Core

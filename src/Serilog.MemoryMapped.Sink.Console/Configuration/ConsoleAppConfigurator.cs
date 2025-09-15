@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog.Debugging;
+using Serilog.MemoryMapped.Queue;
 using Serilog.MemoryMapped.Sink.Configuration;
 
 namespace Serilog.MemoryMapped.Sink.Console.Configuration;
@@ -10,9 +10,13 @@ public static class ConsoleAppConfigurator
     public static (IServiceCollection services, IConfiguration configuration) CreateSettings()
     {
         MemoryMapperLogger.Disable();
-        MemoryMapperLogger.Enable(System.Console.WriteLine);
+        MemoryMapperLogger.Enable((msg) =>
+        {
+            //System.Console.WriteLine(msg);
+            Log.Logger.Verbose("MemoryMapper Logger {message}", msg);
+        });
 
-        SelfLog.Enable(msg => { System.Console.WriteLine($"Serilog: {msg}"); });
+        // SelfLog.Enable(msg => { System.Console.WriteLine($"Serilog SelfLog: {msg}"); });
 
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddJsonFile("appsettings.json");

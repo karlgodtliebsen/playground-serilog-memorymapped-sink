@@ -2,12 +2,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog.MemoryMapped.Queue.Configuration;
 using Serilog.MemoryMapped.Repository.MsSql.Configuration;
 using Serilog.MemoryMapped.Repository.PostgreSql.Configuration;
 using Serilog.MemoryMapped.Repository.SqLite.Configuration;
 using Serilog.MemoryMapped.Sink.Configuration;
 using Serilog.MemoryMapped.Sink.Forwarder.Configuration;
-using Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
 namespace Serilog.MemoryMapped.Sink.Console.Configuration;
 
@@ -88,6 +88,19 @@ public static class HostConfigurator
         return host;
     }
 
+    public static IHost BuildMonitorHost(this IServiceProvider serviceProvider, IConfiguration configuration)
+    {
+        var builder = Host.CreateDefaultBuilder()
+            .ConfigureServices((context, services) =>
+            {
+                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, configuration); });
+                services.AddMemoryMappedQueueServices(configuration);
+                services.AddHostedService<LogMonitorServiceHost>();
+            });
+
+        var host = builder.Build();
+        return host;
+    }
 
     public static Task RunHostAsync(IHost host, string title, Microsoft.Extensions.Logging.ILogger logger, CancellationToken cancellationToken)
     {
@@ -119,48 +132,5 @@ public static class HostConfigurator
             logger.LogCritical(ex, "Error starting Hosts for {title}", title);
             throw;
         }
-    }
-}
-
-public sealed class LogProducerConsoleHost(ILogger<LogProducerConsoleHost> logger) : BackgroundService
-{
-    private Task? runningTask;
-    private const int ContinuousRetryIntervalMinutes = 1;
-    private readonly TimeSpan continuousRetryTimeSpan = TimeSpan.FromMinutes(ContinuousRetryIntervalMinutes);
-    private readonly int monitoringInterval = 10000;
-
-    protected override Task ExecuteAsync(CancellationToken cancellationToken)
-    {
-        var serviceName = nameof(LogProducerConsoleHost);
-        logger.LogInformation("Background Service:{service} is running.", serviceName);
-
-        var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
-
-        runningTask = combinedPolicy.ExecuteAsync(async (ct) =>
-        {
-            while (!ct.IsCancellationRequested)
-            {
-                LogProducer.Produce(System.Console.WriteLine, logger);
-                await Task.Delay(monitoringInterval, cancellationToken);
-            }
-        }, cancellationToken);
-
-        return runningTask;
-    }
-
-
-    public override void Dispose()
-    {
-        if (runningTask is not null)
-        {
-            if (runningTask.IsCompleted)
-            {
-                runningTask.Dispose();
-            }
-
-            runningTask = null;
-        }
-
-        base.Dispose();
     }
 }

@@ -1,7 +1,6 @@
-﻿using Serilog.MemoryMapped.Serializers;
+﻿using Serilog.MemoryMapped.Queue.Serializers;
 
-
-namespace Serilog.MemoryMapped;
+namespace Serilog.MemoryMapped.Queue;
 
 public class MemoryMappedQueue<T>(string name, IFastSerializer serializer) : IMemoryMappedQueue<T> where T : class
 {

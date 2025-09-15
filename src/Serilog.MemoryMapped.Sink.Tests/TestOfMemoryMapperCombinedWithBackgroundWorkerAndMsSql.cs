@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog.Debugging;
+using Serilog.MemoryMapped.Queue;
 using Serilog.MemoryMapped.Sink.Configuration;
 using Serilog.MemoryMapped.Sink.Console;
 using Serilog.MemoryMapped.Sink.Console.Configuration;

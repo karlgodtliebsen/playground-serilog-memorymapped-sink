@@ -1,4 +1,4 @@
-﻿namespace Serilog.MemoryMapped.Serializers;
+﻿namespace Serilog.MemoryMapped.Queue.Serializers;
 
 public interface IFastSerializer
 {

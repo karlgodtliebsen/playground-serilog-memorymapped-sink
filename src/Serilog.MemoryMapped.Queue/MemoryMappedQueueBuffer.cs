@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using System.IO.MemoryMappedFiles;
 
-namespace Serilog.MemoryMapped;
+namespace Serilog.MemoryMapped.Queue;
 
 
 // ANALYSIS: Your MemoryMappedQueueBuffer vs Basic Implementation

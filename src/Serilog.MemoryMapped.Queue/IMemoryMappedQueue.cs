@@ -1,4 +1,4 @@
-﻿namespace Serilog.MemoryMapped;
+﻿namespace Serilog.MemoryMapped.Queue;
 
 public interface IMemoryMappedQueue<T> : IDisposable where T : class
 {

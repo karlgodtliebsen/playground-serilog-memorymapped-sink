@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
 
-namespace Serilog.MemoryMapped;
+namespace Serilog.MemoryMapped.Queue;
 
 sealed class PooledBufferWriter : IBufferWriter<byte>, IDisposable
 {

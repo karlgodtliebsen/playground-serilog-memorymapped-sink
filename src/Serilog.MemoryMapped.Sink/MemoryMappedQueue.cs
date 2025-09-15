@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
-using Serilog.MemoryMapped.Serializers;
+using Serilog.MemoryMapped.Queue;
+using Serilog.MemoryMapped.Queue.Serializers;
 using Serilog.MemoryMapped.Sink.Configuration;
 using Serilog.MemoryMapped.Sink.Sinks;
 

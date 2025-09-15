@@ -1,4 +1,5 @@
-﻿using Serilog.MemoryMapped.Sink.Sinks;
+﻿using Serilog.MemoryMapped.Queue;
+using Serilog.MemoryMapped.Sink.Sinks;
 
 namespace Serilog.MemoryMapped.Sink;
 

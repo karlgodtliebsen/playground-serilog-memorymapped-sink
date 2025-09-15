@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace Serilog.MemoryMapped.Serializers;
+namespace Serilog.MemoryMapped.Queue.Serializers;
 
 public class FastJsonSerializer : IFastSerializer
 {
