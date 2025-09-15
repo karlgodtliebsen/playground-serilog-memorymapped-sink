@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog.Events;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public sealed class LogEventShippingServiceMultiHost(ILogEventMemoryMappedShippingClient[] workerServices, ILogger<LogEventShippingServiceMultiHost> logger) : BackgroundService
+public sealed class LogEventShippingServiceMultiHost(ILogEventMemoryMappedShippingClient[] workerServices, ILogger logger) : BackgroundService
 {
     private readonly IList<Task> runningTasks = new List<Task>();
     private const int ContinuousRetryIntervalMinutes = 1;
@@ -14,8 +14,7 @@ public sealed class LogEventShippingServiceMultiHost(ILogEventMemoryMappedShippi
         foreach (var workerService in workerServices)
         {
             var serviceName = workerService.GetType().FullName ?? "";
-            if (logger.IsEnabled(LogLevel.Trace))
-                logger.LogTrace("Background Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingServiceMultiHost), serviceName);
+            if (logger.IsEnabled(LogEventLevel.Verbose)) logger.Verbose("Background Service:{service} with Worker: {worker} is running.", nameof(LogEventShippingServiceMultiHost), serviceName);
 
             //TODO: 
             var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);

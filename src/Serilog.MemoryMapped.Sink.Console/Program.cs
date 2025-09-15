@@ -1,29 +1,34 @@
-﻿// See https://aka.ms/new-console-template for more information
-
+﻿
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Serilog.MemoryMapped.Queue;
 using Serilog.MemoryMapped.Sink.Console.Configuration;
 
-var title = "MemoryMapped Demo";
+const string title = "MemoryMapped Demo";
 
 Console.Title = title;
 Console.WriteLine(title);
 CancellationTokenSource cancellationTokenSource = new();
 
-var (services, configuration) = ConsoleAppConfigurator.CreateSettings();
-var serviceProvider = ConsoleAppConfigurator.Build(services, configuration);
-
-var mssqlHost = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration);
-
 //start a test container instance for postgresql. get the connection string and pass along
-//var serilogHost = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
-//var postgreSqlHost = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration);
+//var serilogHost = HostConfigurator.BuildApplicationLoggingHostUsingSqLite();
+//var postgreSqlHost = HostConfigurator.BuildApplicationLoggingHostUsingPostgreSql();
 
-var monitorHost = serviceProvider.BuildMonitorHost(configuration);
-var host = serviceProvider.BuildHost(configuration);
-var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+var mssqlHost = HostConfigurator.BuildApplicationLoggingHostUsingMsSql();
+var monitorHost = HostConfigurator.BuildMonitorHost();
+var producerHost = HostConfigurator.BuildProducerHost();
+var sLogger = mssqlHost.Services.GetRequiredService<Serilog.ILogger>();
+var mLogger = mssqlHost.Services.GetRequiredService<ILogger<Program>>();
+
+MemoryMapperLogger.Disable();
+MemoryMapperLogger.Enable((msg) =>
+{
+    //System.Console.WriteLine(msg);
+    sLogger.Verbose("MemoryMapper Logger {message}", msg);
+});
+
 
 //start multiple hosts
-await HostConfigurator.RunHostsAsync([mssqlHost, monitorHost, host], title, logger, cancellationTokenSource.Token);
+await HostConfigurator.RunHostsAsync([mssqlHost, monitorHost, producerHost], title, mLogger, cancellationTokenSource.Token);
 
 

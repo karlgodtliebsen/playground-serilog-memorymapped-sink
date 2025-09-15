@@ -34,9 +34,10 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
         var connectionString = container!.GetConnectionString();
         return connectionString;
     }
-    private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings(string connectionString)
+
+    [Fact]
+    public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
-        output.WriteLine($"Using PostgreSql TestContainer Connection: {connectionString}");
         MemoryMapperLogger.Disable();
         MemoryMapperLogger.Enable(output.WriteLine);
         SelfLog.Enable(msg =>
@@ -45,27 +46,15 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
             if (TestContext.Current.CancellationToken.IsCancellationRequested) return;
             output.WriteLine($"Serilog: {msg}");
         });
-        var configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.AddJsonFile("appsettings.json");
-        var configuration = configurationBuilder.Build();
 
-        IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices(configuration);
-        services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
-        var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.SetupSerilogWithSink(configuration);
-        return (serviceProvider, configuration);
-    }
-
-    [Fact]
-    public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
-    {
         var max = 11;
         var count = 0;
         var connectionString = await StartContainerAsync();
-        var (serviceProvider, configuration) = BuildSettings(connectionString);
+        var producer = HostConfigurator.BuildProducerHost();
+        var logger = producer.Services.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite>>();
+        var host = HostConfigurator.BuildApplicationLoggingHostUsingPostgreSql(connectionString);
 
-        var host = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration, connectionString);
+
         Task.Run(async () => await host.RunAsync(TestContext.Current.CancellationToken));
 
         var messageReceived = new TaskCompletionSource<bool>();
@@ -84,7 +73,6 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
             }
         }, TestContext.Current.CancellationToken);
 
-        var logger = serviceProvider.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql>>();
         LogProducer.Produce(output.WriteLine, logger);
 
         await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));

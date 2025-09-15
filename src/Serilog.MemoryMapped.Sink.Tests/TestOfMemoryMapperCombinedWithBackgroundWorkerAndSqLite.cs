@@ -18,38 +18,12 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     private readonly CancellationTokenSource cancellationTokenSource = new(TimeSpan.FromMinutes(1));
 
 
-    private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
-    {
-        MemoryMapperLogger.Disable();
-        MemoryMapperLogger.Enable(output.WriteLine);
-
-        SelfLog.Enable(msg =>
-        {
-            if (msg.Contains("Successfully inserted")) messages.Add(msg);
-            if (TestContext.Current.CancellationToken.IsCancellationRequested) return;
-            output.WriteLine($"Serilog: {msg}");
-        });
-        var configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.AddJsonFile("appsettings.json");
-        var configuration = configurationBuilder.Build();
-        IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices(configuration);
-
-        services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
-
-        var serviceProvider = services.BuildServiceProvider();
-
-        serviceProvider.SetupSerilogWithSink(configuration);
-        return (serviceProvider, configuration);
-    }
-
-
     [Fact]
     public async Task ProduceOnly()
     {
         MemoryMapperLogger.Disable();
         MemoryMapperLogger.Enable(output.WriteLine);
-        var (serviceProvider, configuration) = BuildSettings();
+        var producer = HostConfigurator.BuildProducerHost();
 
         for (var i = 0; i < 10000; i++)
         {
@@ -68,8 +42,9 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     [Fact]
     public async Task ConsumeOnly()
     {
-        var (serviceProvider, configuration) = BuildSettings();
-        var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
+        var host = HostConfigurator.BuildApplicationLoggingHostUsingSqLite();
         Task.Run(async () => await host.RunAsync(TestContext.Current.CancellationToken)); //not the best way to wait. we should have some task completion wait going on
 
         output.WriteLine($"Waiting");
@@ -80,10 +55,22 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
+        MemoryMapperLogger.Disable();
+        MemoryMapperLogger.Enable(output.WriteLine);
+
+        SelfLog.Enable(msg =>
+        {
+            if (msg.Contains("Successfully inserted")) messages.Add(msg);
+            if (TestContext.Current.CancellationToken.IsCancellationRequested) return;
+            output.WriteLine($"Serilog: {msg}");
+        });
+
         var max = 11;
         var count = 0;
-        var (serviceProvider, configuration) = BuildSettings();
-        var host = serviceProvider.BuildApplicationLoggingHostUsingSqLite(configuration);
+        var producer = HostConfigurator.BuildProducerHost();
+        var logger = producer.Services.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite>>();
+
+        var host = HostConfigurator.BuildApplicationLoggingHostUsingSqLite();
         Task.Run(async () => await host.RunAsync(TestContext.Current.CancellationToken));
         var messageReceived = new TaskCompletionSource<bool>();
         _ = Task.Run(async () =>
@@ -99,7 +86,6 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite(ITestOutput
                 await Task.Delay(1);
             }
         }, TestContext.Current.CancellationToken);
-        var logger = serviceProvider.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite>>();
 
         LogProducer.Produce(output.WriteLine, logger);
 

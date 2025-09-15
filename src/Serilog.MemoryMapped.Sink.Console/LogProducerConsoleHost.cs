@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-namespace Serilog.MemoryMapped.Sink.Console.Configuration;
+namespace Serilog.MemoryMapped.Sink.Console;
 
 public sealed class LogProducerConsoleHost(ILogger<LogProducerConsoleHost> logger) : BackgroundService
 {

@@ -11,7 +11,6 @@ public sealed class LogMonitorServiceHost(IMemoryMappedQueueMonitor workerServic
 
     private const int ContinuousRetryIntervalMinutes = 1;
     private readonly TimeSpan continuousRetryTimeSpan = TimeSpan.FromMinutes(ContinuousRetryIntervalMinutes);
-    private readonly int monitoringInterval = 10;
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {

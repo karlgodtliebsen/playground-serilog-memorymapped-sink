@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System;
+using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +18,9 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
     private readonly IList<string> messages = new List<string>();
     private readonly CancellationTokenSource cancellationTokenSource = new(TimeSpan.FromMinutes(1));
 
-    private (IServiceProvider serviceProvider, IConfiguration configuration) BuildSettings()
+
+    [Fact]
+    public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
         MemoryMapperLogger.Disable();
         MemoryMapperLogger.Enable(output.WriteLine);
@@ -27,27 +30,13 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
             if (TestContext.Current.CancellationToken.IsCancellationRequested) return;
             output.WriteLine($"Serilog: {msg}");
         });
-        var configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.AddJsonFile("appsettings.json");
-        var configuration = configurationBuilder.Build();
-        IServiceCollection services = new ServiceCollection();
-        services.AddMemoryMappedServices(configuration);
 
-        services.AddLogging((loggingBuilder) => { services.AddSerilog(loggingBuilder, configuration); });
-
-        var serviceProvider = services.BuildServiceProvider();
-
-        serviceProvider.SetupSerilogWithSink(configuration);
-        return (serviceProvider, configuration);
-    }
-
-    [Fact]
-    public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
-    {
         var max = 11;
         var count = 0;
-        var (serviceProvider, configuration) = BuildSettings();
-        var host = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration);
+        var producer = HostConfigurator.BuildProducerHost();
+        var logger = producer.Services.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndSqLite>>();
+
+        var host = HostConfigurator.BuildApplicationLoggingHostUsingMsSql();
         Task.Run(async () => await host.RunAsync(TestContext.Current.CancellationToken));
         var messageReceived = new TaskCompletionSource<bool>();
         _ = Task.Run(async () =>
@@ -63,7 +52,6 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
                 await Task.Delay(1);
             }
         }, TestContext.Current.CancellationToken);
-        var logger = serviceProvider.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql>>();
         LogProducer.Produce(output.WriteLine, logger);
 
         await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));

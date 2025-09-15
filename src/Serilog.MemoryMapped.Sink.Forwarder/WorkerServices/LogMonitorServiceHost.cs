@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog.MemoryMapped.Queue.Monitor;
 
 namespace Serilog.MemoryMapped.Sink.Forwarder.WorkerServices;
 
-public sealed class LogMonitorServiceHost(IMemoryMappedQueueMonitor workerService, ILogger<LogMonitorServiceHost> logger) : BackgroundService
+public sealed class LogMonitorServiceHost(IMemoryMappedQueueMonitor workerService, ILogger logger) : BackgroundService
 {
     private Task? runningTask;
 
@@ -15,7 +14,7 @@ public sealed class LogMonitorServiceHost(IMemoryMappedQueueMonitor workerServic
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var serviceName = nameof(LogMonitorServiceHost);
-        logger.LogInformation("Background Service:{service} is running.", serviceName);
+        logger.Information("Background Service:{service} is running.", serviceName);
 
         var combinedPolicy = HostingPolicyBuilder.CreateCombinedRetryPolicy(serviceName, continuousRetryTimeSpan, logger);
 

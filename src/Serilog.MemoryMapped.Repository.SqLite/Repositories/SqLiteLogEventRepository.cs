@@ -13,7 +13,7 @@ public sealed class SqLiteLogEventRepository : LogEventRepository
 {
     private readonly string connectionString;
 
-    public SqLiteLogEventRepository(IOptions<DatabaseConnectionOptions> options, ILogger<SqLiteLogEventRepository> logger) : base(logger)
+    public SqLiteLogEventRepository(IOptions<DatabaseConnectionOptions> options, ILogger logger) : base(logger)
     {
         connectionString = BuildConnectionString(options.Value.ConnectionString);
     }

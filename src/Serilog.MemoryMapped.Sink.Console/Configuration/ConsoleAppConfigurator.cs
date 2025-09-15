@@ -9,12 +9,12 @@ public static class ConsoleAppConfigurator
 {
     public static (IServiceCollection services, IConfiguration configuration) CreateSettings()
     {
-        MemoryMapperLogger.Disable();
-        MemoryMapperLogger.Enable((msg) =>
-        {
-            //System.Console.WriteLine(msg);
-            Log.Logger.Verbose("MemoryMapper Logger {message}", msg);
-        });
+        //MemoryMapperLogger.Disable();
+        //MemoryMapperLogger.Enable((msg) =>
+        //{
+        //    //System.Console.WriteLine(msg);
+        //    Log.Logger.Verbose("MemoryMapper Logger {message}", msg);
+        //});
 
         // SelfLog.Enable(msg => { System.Console.WriteLine($"Serilog SelfLog: {msg}"); });
 
@@ -31,7 +31,7 @@ public static class ConsoleAppConfigurator
     public static IServiceProvider Build(IServiceCollection services, IConfiguration configuration)
     {
         var serviceProvider = services.BuildServiceProvider();
-        serviceProvider.SetupSerilogWithSink(configuration);
+        // serviceProvider.SetupSerilogWithSink(LogEventLevel.Information);
         return serviceProvider;
     }
 }

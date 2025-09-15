@@ -18,29 +18,57 @@ public static class SerilogConfigurator
         optionsAction?.Invoke(services, loggingBuilder, configuration);
     }
 
-    public static Serilog.ILogger SetupSerilogWithSink(this IServiceProvider serviceProvider, IConfiguration configuration, Action<LoggerConfiguration>? action = null)
-    {
-        return serviceProvider.SetupSerilogWithSink(configuration, LogEventLevel.Information, action);
-    }
-
-
-    public static Serilog.ILogger SetupSerilogWithSink(this IServiceProvider serviceProvider, IConfiguration configuration, LogEventLevel level, Action<LoggerConfiguration>? action = null)
+    public static Serilog.ILogger SetupSerilogWithSink(this IServiceProvider serviceProvider, LogEventLevel level = LogEventLevel.Information)
     {
         var memoryMappedQueue = serviceProvider.GetRequiredService<IMemoryMappedQueue>();
-        var logConfig = new LoggerConfiguration();
-        logConfig = logConfig
-                .Enrich.WithMachineName()
-                .Enrich.WithThreadId()
-                .Enrich.FromLogContext()
-                .Enrich.WithSpan()
-                .Enrich.With<TraceIdEnricher>()
-            ;
-
-        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, level);
-        logConfig = logConfig.WriteTo.Sink(sink, level);
-        action?.Invoke(logConfig);
-        var logCfg = logConfig.ReadFrom.Configuration(configuration).CreateLogger();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var logCfg = CreateMemoryMappedLogger(memoryMappedQueue, configuration, level);
         Log.Logger = logCfg;
         return logCfg;
     }
+
+    public static ILogger CreateMemoryMappedLogger(IMemoryMappedQueue memoryMappedQueue, IConfiguration configuration, LogEventLevel level = LogEventLevel.Information)
+    {
+        var logConfig = new LoggerConfiguration()
+            .Enrich.WithMachineName()
+            .Enrich.WithThreadId()
+            .Enrich.FromLogContext()
+            .Enrich.WithSpan()
+            .Enrich.With<TraceIdEnricher>()
+            .WriteTo.Sink(new LogEventMemoryMappedSink(memoryMappedQueue, level), level)
+            .ReadFrom.Configuration(configuration);
+
+        return logConfig.CreateLogger();
+    }
+
+    public static ILogger CreateConsumerLogger(IConfiguration configuration, string? context = null)
+    {
+        var config = new LoggerConfiguration()
+            .Enrich.WithMachineName()
+            .Enrich.WithThreadId()
+            .Enrich.FromLogContext();
+
+        if (!string.IsNullOrEmpty(context))
+        {
+            config = config.Enrich.WithProperty("TechnicalContext", context);
+        }
+
+        return config.ReadFrom.Configuration(configuration)
+            .CreateLogger();
+    }
+
+    public static ILogger CreateMonitoringLogger(IConfiguration configuration, string? context = null)
+    {
+        var config = new LoggerConfiguration()
+            .Enrich.WithProperty("LogCategory", "Monitoring");
+        if (!string.IsNullOrEmpty(context))
+        {
+            config = config.Enrich.WithProperty("TechnicalContext", context);
+        }
+
+        return config
+            .ReadFrom.Configuration(configuration)
+            .CreateLogger();
+    }
 }
+

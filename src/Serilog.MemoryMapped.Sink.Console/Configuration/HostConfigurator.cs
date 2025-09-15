@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog.MemoryMapped.Queue.Configuration;
@@ -13,20 +12,19 @@ namespace Serilog.MemoryMapped.Sink.Console.Configuration;
 
 public static class HostConfigurator
 {
-    public static IHost BuildApplicationLoggingHostUsingSqLite(this IServiceProvider serviceProvider, IConfiguration configuration)
+    public static IHost BuildApplicationLoggingHostUsingSqLite()
     {
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddLogging(loggingBuilder =>
-                {
-                    services.AddSerilog(loggingBuilder, configuration);
-                });
+                var logger = SerilogConfigurator.CreateConsumerLogger(context.Configuration);
+                services.AddSingleton<ILogger>(logger);
+                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, context.Configuration); });
                 services
-                    .AddMemoryMappedServices(configuration)
-                    .AddForwarderServices(configuration)
-                    .AddHostServices(configuration)
-                    .AddSqLiteServices(configuration);
+                    .AddMemoryMappedServices(context.Configuration)
+                    .AddForwarderServices(context.Configuration)
+                    .AddHostServices(context.Configuration)
+                    .AddSqLiteServices(context.Configuration);
             });
 
         var host = builder.Build();
@@ -34,67 +32,69 @@ public static class HostConfigurator
     }
 
     //This is dedicated to TestContainer PostgreSql, which is why the connection string is transferred. Can be done in a better way, but beyond the scope
-    public static IHost BuildApplicationLoggingHostUsingPostgreSql(this IServiceProvider serviceProvider, IConfiguration configuration, string connectionString)
+    public static IHost BuildApplicationLoggingHostUsingPostgreSql(string connectionString)
     {
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddLogging(loggingBuilder =>
-                {
-                    services.AddSerilog(loggingBuilder, configuration);
-                });
+                var logger = SerilogConfigurator.CreateConsumerLogger(context.Configuration);
+                services.AddSingleton<ILogger>(logger);
+                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, context.Configuration); });
                 services
-                    .AddMemoryMappedServices(configuration)
-                    .AddForwarderServices(configuration)
-                    .AddHostServices(configuration)
-                    .AddPostgreSqlServices(configuration, connectionString);
+                    .AddMemoryMappedServices(context.Configuration)
+                    .AddForwarderServices(context.Configuration)
+                    .AddHostServices(context.Configuration)
+                    .AddPostgreSqlServices(context.Configuration, connectionString);
             });
 
         var host = builder.Build();
         return host;
     }
 
-    public static IHost BuildApplicationLoggingHostUsingMsSql(this IServiceProvider serviceProvider, IConfiguration configuration)
+    public static IHost BuildApplicationLoggingHostUsingMsSql()
     {
-
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddLogging(loggingBuilder =>
-                {
-                    services.AddSerilog(loggingBuilder, configuration);
-                });
+                var logger = SerilogConfigurator.CreateConsumerLogger(context.Configuration);
+                services.AddSingleton<ILogger>(logger);
+                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, context.Configuration); });
                 services
-                    .AddMemoryMappedServices(configuration)
-                    .AddForwarderServices(configuration)
-                    .AddHostServices(configuration)
-                    .AddMsSqlServices(configuration);
+                    .AddMemoryMappedServices(context.Configuration)
+                    .AddForwarderServices(context.Configuration)
+                    .AddHostServices(context.Configuration)
+                    .AddMsSqlServices(context.Configuration);
             });
 
         var host = builder.Build();
+
         return host;
     }
 
-    public static IHost BuildHost(this IServiceProvider serviceProvider, IConfiguration configuration)
+    public static IHost BuildProducerHost()
     {
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, configuration); });
+                services.AddMemoryMappedServices(context.Configuration);
+                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, context.Configuration); });
                 services.AddHostedService<LogProducerConsoleHost>();
             });
 
         var host = builder.Build();
+        host.Services.SetupSerilogWithSink();
         return host;
     }
 
-    public static IHost BuildMonitorHost(this IServiceProvider serviceProvider, IConfiguration configuration)
+    public static IHost BuildMonitorHost()
     {
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, configuration); });
-                services.AddMemoryMappedQueueServices(configuration);
+                var logger = SerilogConfigurator.CreateMonitoringLogger(context.Configuration);
+                services.AddSingleton<ILogger>(logger);
+                services.AddLogging(loggingBuilder => { services.AddSerilog(loggingBuilder, context.Configuration); });
+                services.AddMemoryMappedQueueServices(context.Configuration);
                 services.AddHostedService<LogMonitorServiceHost>();
             });
 
