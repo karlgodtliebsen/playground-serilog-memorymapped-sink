@@ -9,6 +9,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Include="appsettings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 
 
 		<PackageReference Include="Polly" Version="8.6.3" />
@@ -20,12 +26,15 @@
 		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
 
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
 		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
 		<PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
 		<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
@@ -33,20 +42,29 @@
 		<PackageReference Include="Serilog.Sinks.Map" Version="2.0.0" />
 		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
 		<PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" />
 
 		<PackageReference Include="DynamicData" Version="9.4.1" />
 
 		<PackageReference Include="Dapper" Version="2.1.66" />
 		<PackageReference Include="Dapper.Contrib" Version="2.0.78" />
-		<PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" />
-
-
 		<PackageReference Include="System.Text.Json" Version="9.0.9" />
+
+		<PackageReference Include="Testcontainers" Version="4.7.0" />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="4.7.0" />
+
+		<PackageReference Include="Polly" Version="8.6.3" />
+		<PackageReference Include="Ulid" Version="1.4.1" />
 
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Serilog.MemoryMapped.Queue\Serilog.MemoryMapped.Queue.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.MsSql\Serilog.MemoryMapped.Repository.MsSql.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.PostgreSql\Serilog.MemoryMapped.Repository.PostgreSql.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Repository.SqLite\Serilog.MemoryMapped.Repository.SqLite.csproj" />
+		<ProjectReference Include="..\Serilog.MemoryMapped.Sink.Forwarder\Serilog.MemoryMapped.Sink.Forwarder.csproj" />
 		<ProjectReference Include="..\Serilog.MemoryMapped.Sink\Serilog.MemoryMapped.Sink.csproj" />
 	</ItemGroup>
 

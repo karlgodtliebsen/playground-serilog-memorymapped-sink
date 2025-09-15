@@ -1,14 +1,11 @@
-﻿using FluentAssertions;
-
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
 using Serilog.Enrichers.Span;
 using Serilog.Events;
 using Serilog.MemoryMapped.Sink.Sinks;
 
-namespace Serilog.MemoryMapped.Sink.Tests;
+namespace Serilog.MemoryMapped.Sink.Console.Configuration;
 
 public static class SerilogConfigurator
 {
@@ -23,8 +20,13 @@ public static class SerilogConfigurator
 
     public static Serilog.ILogger SetupSerilogWithSink(this IServiceProvider serviceProvider, IConfiguration configuration, Action<LoggerConfiguration>? action = null)
     {
+        return serviceProvider.SetupSerilogWithSink(configuration, LogEventLevel.Information, action);
+    }
+
+
+    public static Serilog.ILogger SetupSerilogWithSink(this IServiceProvider serviceProvider, IConfiguration configuration, LogEventLevel level, Action<LoggerConfiguration>? action = null)
+    {
         var memoryMappedQueue = serviceProvider.GetRequiredService<IMemoryMappedQueue>();
-        memoryMappedQueue.Should().NotBeNull();
         var logConfig = new LoggerConfiguration();
         logConfig = logConfig
                 .Enrich.WithMachineName()
@@ -34,16 +36,11 @@ public static class SerilogConfigurator
                 .Enrich.With<TraceIdEnricher>()
             ;
 
-        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, LogEventLevel.Verbose);
-        logConfig
-            .WriteTo.Sink(sink, LogEventLevel.Verbose)
-            .MinimumLevel.Verbose()
-            ;
-
+        var sink = new LogEventMemoryMappedSink(memoryMappedQueue, level);
+        logConfig = logConfig.WriteTo.Sink(sink, level);
         action?.Invoke(logConfig);
-
-        Log.Logger = logConfig.ReadFrom.Configuration(configuration).CreateLogger();
-
-        return Log.Logger;
+        var logCfg = logConfig.ReadFrom.Configuration(configuration).CreateLogger();
+        Log.Logger = logCfg;
+        return logCfg;
     }
 }

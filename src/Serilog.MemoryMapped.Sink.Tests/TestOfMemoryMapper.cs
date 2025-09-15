@@ -11,7 +11,7 @@ using Serilog.MemoryMapped.Serializers;
 using Serilog.MemoryMapped.Sink.Configuration;
 using Serilog.MemoryMapped.Sink.Sinks;
 using Serilog.Parsing;
-using Xunit.Abstractions;
+
 
 namespace Serilog.MemoryMapped.Sink.Tests;
 

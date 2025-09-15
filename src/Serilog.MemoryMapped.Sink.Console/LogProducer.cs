@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Serilog.Context;
-using Xunit.Abstractions;
 
-namespace Serilog.MemoryMapped.Sink.Tests;
+namespace Serilog.MemoryMapped.Sink.Console;
 
 public static class LogProducer
 {
-    public static void Produce(ITestOutputHelper output)
+    public static void Produce(Action<string> output, Microsoft.Extensions.Logging.ILogger logger)
     {
         using var activity = new Activity("TestOperation")
             .SetIdFormat(ActivityIdFormat.W3C) // Use W3C format
@@ -15,7 +15,7 @@ public static class LogProducer
         activity.SetParentId("00-12345678901234567890123456789012-1234567890123456-01");
         // Add some tags to the activity
         activity?.SetTag("test.method", "Test_With_Activity_Tracing");
-        activity?.SetTag("test.class", nameof(TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql));
+        activity?.SetTag("test.class", nameof(LogProducer));
 
         // Create listener for the activity source
         using var listener = new ActivityListener
@@ -30,13 +30,15 @@ public static class LogProducer
             using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString()))
             using (LogContext.PushProperty("SpanId", Activity.Current?.SpanId.ToString()))
             {
-                Log.Logger.Verbose("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
-                Log.Logger.Information("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
-                Log.Logger.Error(new FileNotFoundException("No Luck", "the file not found"), "the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+                logger.LogTrace("the Verbose message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+                logger.LogDebug("the Debug message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+                logger.LogInformation("the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
+                logger.LogError(new FileNotFoundException("No Luck", "the file not found"), "the Information message template {UserId} {t1} {t2} {t3} {index}", "the user", "the t1", "the t2", "the t3", i);
             }
 
-            output.WriteLine($"Emitting LogEntries {i}");
+            output($"Emitting LogEntries {i}");
         }
-        output.WriteLine($"Done Emitting - Entering Wait");
+
+        output("Done Emitting");
     }
 }

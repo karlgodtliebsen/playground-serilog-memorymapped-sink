@@ -1,13 +1,12 @@
 ﻿using FluentAssertions;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
+using Microsoft.Extensions.Logging;
 using Serilog.Debugging;
 using Serilog.MemoryMapped.Sink.Configuration;
-
-using Xunit.Abstractions;
+using Serilog.MemoryMapped.Sink.Console;
+using Serilog.MemoryMapped.Sink.Console.Configuration;
 
 namespace Serilog.MemoryMapped.Sink.Tests;
 
@@ -21,11 +20,10 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
     {
         MemoryMapperLogger.Disable();
         MemoryMapperLogger.Enable(output.WriteLine);
-
         SelfLog.Enable(msg =>
         {
             if (msg.Contains("Successfully inserted")) messages.Add(msg);
-            if (cancellationTokenSource.IsCancellationRequested) return;
+            if (TestContext.Current.CancellationToken.IsCancellationRequested) return;
             output.WriteLine($"Serilog: {msg}");
         });
         var configurationBuilder = new ConfigurationBuilder();
@@ -49,11 +47,11 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
         var count = 0;
         var (serviceProvider, configuration) = BuildSettings();
         var host = serviceProvider.BuildApplicationLoggingHostUsingMsSql(configuration);
-        Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
+        Task.Run(async () => await host.RunAsync(TestContext.Current.CancellationToken));
         var messageReceived = new TaskCompletionSource<bool>();
         _ = Task.Run(async () =>
         {
-            while (!cancellationTokenSource.IsCancellationRequested)
+            while (!cancellationTokenSource.IsCancellationRequested && !TestContext.Current.CancellationToken.IsCancellationRequested)
             {
                 if (messages.Count >= max)
                 {
@@ -63,15 +61,13 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql(ITestOutputH
 
                 await Task.Delay(1);
             }
-
-        }, cancellationTokenSource.Token);
-
-        LogProducer.Produce(output);
+        }, TestContext.Current.CancellationToken);
+        var logger = serviceProvider.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndMsSql>>();
+        LogProducer.Produce(output.WriteLine, logger);
 
         await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
         output.WriteLine($"Done Wait {count}");
         await Log.CloseAndFlushAsync();
         count.Should().BeGreaterThanOrEqualTo(max);
-        await cancellationTokenSource.CancelAsync();
     }
 }

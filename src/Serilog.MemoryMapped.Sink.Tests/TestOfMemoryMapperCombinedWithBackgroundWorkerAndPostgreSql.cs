@@ -1,22 +1,20 @@
 ﻿using FluentAssertions;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
+using Microsoft.Extensions.Logging;
 using Serilog.Debugging;
 using Serilog.MemoryMapped.Sink.Configuration;
-
+using Serilog.MemoryMapped.Sink.Console;
+using Serilog.MemoryMapped.Sink.Console.Configuration;
 using Testcontainers.PostgreSql;
-
-using Xunit.Abstractions;
 
 namespace Serilog.MemoryMapped.Sink.Tests;
 
 public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOutputHelper output)
 {
     //TestContext.Current.CancellationToken
-    private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+    private readonly CancellationTokenSource cancellationTokenSource = new(TimeSpan.FromMinutes(1));
 
     private readonly string databaseName = "LoggingDemo";
     private readonly string password = "yourStrong(!)Password";
@@ -43,7 +41,7 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
         SelfLog.Enable(msg =>
         {
             if (msg.Contains("Successfully inserted")) messages.Add(msg);
-            if (cancellationTokenSource.IsCancellationRequested) return;
+            if (TestContext.Current.CancellationToken.IsCancellationRequested) return;
             output.WriteLine($"Serilog: {msg}");
         });
         var configurationBuilder = new ConfigurationBuilder();
@@ -61,35 +59,36 @@ public class TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql(ITestOu
     [Fact]
     public async Task VerifyLogEventIsEnqueuedInMemoryMapperUsingLogger()
     {
-        int max = 11;
-        int count = 0;
+        var max = 11;
+        var count = 0;
         var connectionString = await StartContainerAsync();
         var (serviceProvider, configuration) = BuildSettings(connectionString);
 
         var host = serviceProvider.BuildApplicationLoggingHostUsingPostgreSql(configuration, connectionString);
-        Task.Run(async () => await host.RunAsync(cancellationTokenSource.Token));
+        Task.Run(async () => await host.RunAsync(TestContext.Current.CancellationToken));
 
         var messageReceived = new TaskCompletionSource<bool>();
 
         _ = Task.Run(async () =>
         {
-            while (!cancellationTokenSource.IsCancellationRequested)
+            while (!cancellationTokenSource.IsCancellationRequested && !TestContext.Current.CancellationToken.IsCancellationRequested)
             {
                 if (messages.Count >= max)
                 {
                     count = messages.Count;
                     messageReceived.SetResult(true);
                 }
+
                 await Task.Delay(10);
             }
+        }, TestContext.Current.CancellationToken);
 
-        }, cancellationTokenSource.Token);
-        LogProducer.Produce(output);
+        var logger = serviceProvider.GetRequiredService<ILogger<TestOfMemoryMapperCombinedWithBackgroundWorkerAndPostgreSql>>();
+        LogProducer.Produce(output.WriteLine, logger);
 
         await Task.WhenAny(messageReceived.Task, Task.Delay(TimeSpan.FromMinutes(1), cancellationTokenSource.Token));
         output.WriteLine($"Done Wait {count}");
         await Log.CloseAndFlushAsync();
         count.Should().BeGreaterThanOrEqualTo(max);
-        await cancellationTokenSource.CancelAsync();
     }
 }
