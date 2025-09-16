@@ -22,12 +22,12 @@
 - The Console project show how to wire it all of up using IHost for Log Producer (simulating an application that emits logs using Serilog/Microsoft ILogger), a Forwarder and a Queue Monitor running simultaneously.
 
 ### Serilog Sink
-> A simple Serilog sink to serialize a Serilog.LogEvent into an object that is serialized and offloaded into a Memory Mapped File for persistent buffering, and then forwarded (to RDBMS or other style stores)
-> Handling of the LogEvent is done in a structured manner, using a serialization friendly wrapper (LogEventWrapper), and using CompactJsonFormatter for the render message, while also apply Json serialization for the Properties collection, and including the Message Template Text as string for full fidelity
-> This LogEventWrapper data is serialized into a byte array (readonly span) for the Memory Mapped File, using MemoryPack for fast serialization (an option for JSon serialization is available). 
-> The Memory Mapped File ensures that crashes does not lead to loss of log entries, as the file i persisted and available to pick up after restart.
-> The systems uses Serilog in the technical parts, it is after all based on a Serilog Sink, but uses Microsoft ILogger as basics in the Log Event Producer part combined with the Serilog Sink, (ie the code that emit log events for the Sink uses regular Microsoft ILogger).
-> The various IHost configurators in the Console Host shows how to configure the Microsoft ILogger and Serilog on top of that, also setting the application wide Log.Logger to this logger instance, but builds other Serilog log instances using configuration settings, with the Serilgóg ILogger injected in IServiceCollection for the technical parts hosted in each background service.
+- A simple Serilog sink to serialize a Serilog.LogEvent into an object that is serialized and offloaded into a Memory Mapped File for persistent buffering, and then forwarded (to RDBMS or other style stores)
+- Handling of the LogEvent is done in a structured manner, using a serialization friendly wrapper (LogEventWrapper), and using CompactJsonFormatter for the render message, while also apply Json serialization for the Properties collection, and including the Message Template Text as string for full fidelity
+- This LogEventWrapper data is serialized into a byte array (readonly span) for the Memory Mapped File, using MemoryPack for fast serialization (an option for JSon serialization is available). 
+- The Memory Mapped File ensures that crashes does not lead to loss of log entries, as the file i persisted and available to pick up after restart.
+- The systems uses Serilog in the technical parts, it is after all based on a Serilog Sink, but uses Microsoft ILogger as basics in the Log Event Producer part combined with the Serilog Sink, (ie the code that emit log events for the Sink uses regular Microsoft ILogger).
+- The various IHost configurators in the Console Host shows how to configure the Microsoft ILogger and Serilog on top of that, also setting the application wide Log.Logger to this logger instance, but builds other Serilog log instances using configuration settings, with the Serilog ILogger injected in IServiceCollection for the technical parts hosted in each background service.
 
 When using PostgreSql, data is currently stored in TEXT fields, however it is possible to use JSONB fields and Search indexing and optimization can be applied.
 
