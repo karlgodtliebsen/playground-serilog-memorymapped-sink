@@ -7,12 +7,15 @@
 - Host Setup to start  or more background Services to Consume the LogEntries and forward these to Repositories (at the moment RDBMS - MSSql, PostgreSql and SqLite) but cna be expanded to other systems as well
 
 - The system consists of several bricks:
-  - Serilog.MemoryMapped
+  - Serilog.MemoryMapped.Queue
   - Serilog.MemoryMapped.Sink
   - Serilog.MemoryMapped.Sink.Forwarder
   - Serilog.MemoryMapped.Repository.MsSql
   - Serilog.MemoryMapped.Repository.SqLite
   - Serilog.MemoryMapped.Repository.PostgreSql
+
+  - Serilog.MemoryMapped.Console
+
 
   - Serilog.MemoryMapped.Sink.Tests
 
